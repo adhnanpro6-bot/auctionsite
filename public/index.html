@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futuristic Auction Terminal</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Canvas Confetti library for celebration poppers -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="container">
+        
+        <!-- SCREEN 1: Start Button -->
+        <div id="screen-1" class="screen active">
+            <div class="hud-card">
+                <h1>System Ready</h1>
+                <p class="subtitle">Initialize Terminal Session</p>
+                <button class="cyber-btn" onclick="goToScreen(2, 'START_CLICKED')">Start System</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Command Hub -->
+        <div id="screen-2" class="screen">
+            <div class="hud-card">
+                <h1>Command Hub</h1>
+                <p class="subtitle">Select Operation Mode</p>
+                <button class="cyber-btn" onclick="goToScreen(4, 'START_AUCTION')">1. Start Auction</button>
+                <button class="cyber-btn secondary" onclick="goToScreen(3, 'UPLOAD_CARD_CLICKED')">2. Upload Card</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: Upload Card Interface with Pool Selector & "+" Icon -->
+        <div id="screen-3" class="screen">
+            <div class="hud-card wide">
+                <h1>Card Uploader</h1>
+                <p class="subtitle">Assign Assets to Pools & Store Locally</p>
+                
+                <div class="pool-select-container">
+                    <label for="pool-selector">Target Pool:</label>
+                    <select id="pool-selector" class="cyber-select">
+                        <option value="Pool 1">Pool 1</option>
+                        <option value="Pool 2">Pool 2</option>
+                        <option value="Pool 3">Pool 3</option>
+                        <option value="Pool 4">Pool 4</option>
+                        <option value="Pool 5">Pool 5</option>
+                    </select>
+                </div>
+
+                <input type="file" id="file-input" name="cards" accept="image/*" multiple style="display: none;" onchange="handleFilesSelected(event)">
+
+                <div class="upload-grid" id="upload-grid">
+                    <div class="upload-slot add-slot" onclick="triggerFileInput()">
+                        <div class="plus-icon">+</div>
+                        <span>Add Card</span>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="cyber-btn secondary" onclick="goToScreen(2, 'BACK_TO_HUB')">Back</button>
+                    <button class="cyber-btn" id="upload-submit-btn" onclick="submitCards()" disabled>Save to System</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Start Auction Filtered by Pools & Random Drawer -->
+        <div id="screen-4" class="screen">
+            <div class="hud-card wide extra-wide">
+                <h1>Auction Arena</h1>
+                <p class="subtitle">Assets Categorized by Pool Sections</p>
+                
+                <div class="auction-pools-container" id="auction-pools-container">
+                    <p class="loading-text">Scanning vault for pools...</p>
+                </div>
+
+                <div class="button-group" style="margin-top: 1.5rem;">
+                    <button class="cyber-btn secondary" onclick="goToScreen(2, 'BACK_FROM_AUCTION')">Back to Hub</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCREEN 5: Full-Screen Cinematic Random Draw Spotlight Modal -->
+    <div id="screen-5" class="fullscreen-modal">
+        <div class="sparkle-overlay"></div>
+        <div class="fullscreen-hud-content">
+            <h1 id="draw-pool-title" class="glitch-title">Pool Draw</h1>
+            <p class="subtitle">Cinematic Asset Randomizer</p>
+            
+            <div class="random-spotlight-container">
+                <div class="auction-card-slot cinematic-slot" id="spotlight-slot">
+                    <img id="spotlight-img" src="" alt="Random Drawn Card">
+                </div>
+                <div class="spotlight-info" id="spotlight-filename">Initializing draw...</div>
+            </div>
+
+            <div class="button-group cinematic-buttons">
+                <button class="cyber-btn secondary" onclick="goToScreen(4, 'BACK_TO_POOLS')">Back to Pools</button>
+                <button class="cyber-btn danger" id="discard-btn" onclick="">Discard Card</button>
+                <button class="cyber-btn" id="redraw-btn" onclick="">🎲 Draw Another</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedImagesArray = [];
+        let currentPoolCardsCache = {};
+        let activeDrawnCardFilename = null;
+        let activePoolName = null;
+
+        async function goToScreen(screenNumber, actionName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-5').classList.remove('active');
+
+            if (screenNumber === 5) {
+                document.getElementById('screen-5').classList.add('active');
+            } else {
+                document.getElementById(`screen-${screenNumber}`).classList.add('active');
+            }
+
+            if (screenNumber === 4) {
+                loadAuctionPools();
+            }
+
+            try {
+                await fetch('/api/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ actionType: actionName, timestamp: new Date().toISOString() })
+                });
+            } catch (err) {
+                console.error('Server communication error:', err);
+            }
+        }
+
+        async function loadAuctionPools() {
+            const container = document.getElementById('auction-pools-container');
+            container.innerHTML = '<p class="loading-text">Scanning vault for pools...</p>';
+
+            try {
+                const response = await fetch('/api/cards');
+                const data = await response.json();
+
+                if (data.success && data.cards.length > 0) {
+                    container.innerHTML = '';
+                    currentPoolCardsCache = {};
+
+                    const pools = {};
+                    data.cards.forEach(card => {
+                        const poolName = card.pool || 'Pool 1';
+                        if (!pools[poolName]) {
+                            pools[poolName] = [];
+                        }
+                        pools[poolName].push(card.filename);
+                    });
+
+                    currentPoolCardsCache = pools;
+
+                    Object.keys(pools).sort().forEach(poolName => {
+                        const poolSection = document.createElement('div');
+                        poolSection.className = 'pool-section';
+
+                        let cardsHTML = '';
+                        pools[poolName].forEach(filename => {
+                            cardsHTML += `
+                                <div class="auction-card-slot">
+                                    <img src="/uploads/${filename}" alt="Auction Card">
+                                    <div class="card-overlay">
+                                        <button class="cyber-btn small" onclick="startBidding('${filename}', '${poolName}')">Bid</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        poolSection.innerHTML = `
+                            <div class="pool-header-row">
+                                <h2 class="pool-title">📂 ${poolName} (${pools[poolName].length} assets)</h2>
+                                <button class="cyber-btn small draw-pool-btn" onclick="drawRandomFromPool('${poolName}')">🎲 Draw Random Card</button>
+                            </div>
+                            <div class="auction-grid">${cardsHTML}</div>
+                        `;
+                        container.appendChild(poolSection);
+                    });
+
+                } else {
+                    container.innerHTML = '<p class="loading-text">No cards found in storage. Upload cards first!</p>';
+                }
+            } catch (err) {
+                console.error('Error fetching cards:', err);
+                container.innerHTML = '<p class="loading-text">Error connecting to asset database.</p>';
+            }
+        }
+
+        function drawRandomFromPool(poolName) {
+            const poolCards = currentPoolCardsCache[poolName];
+            if (!poolCards || poolCards.length === 0) {
+                alert(`No cards available in ${poolName}!`);
+                return;
+            }
+
+            activePoolName = poolName;
+            goToScreen(5, 'OPEN_RANDOM_DRAW_SPOTLIGHT');
+
+            document.getElementById('draw-pool-title').innerText = `${poolName} - Random Draw`;
+            document.getElementById('redraw-btn').setAttribute('onclick', `drawRandomFromPool('${poolName}')`);
+
+            const imgElement = document.getElementById('spotlight-img');
+            const infoElement = document.getElementById('spotlight-filename');
+            
+            infoElement.innerText = "⚡ Shuffling pool vault with quantum energy...";
+            imgElement.style.opacity = "0.3";
+            imgElement.classList.remove('popped-card');
+
+            let shuffleCount = 0;
+            const shuffleInterval = setInterval(() => {
+                const randomTempCard = poolCards[Math.floor(Math.random() * poolCards.length)];
+                imgElement.src = `/uploads/${randomTempCard}`;
+                shuffleCount++;
+
+                if (shuffleCount > 10) {
+                    clearInterval(shuffleInterval);
+                    const randomIndex = Math.floor(Math.random() * poolCards.length);
+                    activeDrawnCardFilename = poolCards[randomIndex];
+
+                    imgElement.src = `/uploads/${activeDrawnCardFilename}`;
+                    imgElement.style.opacity = "1";
+                    imgElement.classList.add('popped-card');
+                    infoElement.innerText = `🎉 Selected Asset: ${activeDrawnCardFilename}`;
+
+                    document.getElementById('discard-btn').setAttribute('onclick', `discardActiveCard('${poolName}', '${activeDrawnCardFilename}')`);
+
+                    triggerCelebrationPoppers();
+                }
+            }, 70);
+        }
+
+        function triggerCelebrationPoppers() {
+            confetti({
+                particleCount: 120,
+                spread: 90,
+                origin: { y: 0.6 },
+                colors: ['#00f3ff', '#9d00ff', '#ffffff', '#ff007f']
+            });
+        }
+
+        async function discardActiveCard(poolName, filename) {
+            if (!confirm(`Are you sure you want to permanently discard ${filename} from ${poolName}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/discard-card', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: filename })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`🗑️ Card successfully discarded from the system.`);
+                    const index = currentPoolCardsCache[poolName].indexOf(filename);
+                    if (index > -1) {
+                        currentPoolCardsCache[poolName].splice(index, 1);
+                    }
+                    goToScreen(4, 'CARD_DISCARDED');
+                } else {
+                    alert('❌ Failed to discard: ' + result.message);
+                }
+            } catch (err) {
+                console.error('Error discarding card:', err);
+                alert('❌ Error communicating with server.');
+            }
+        }
+
+        function startBidding(filename, poolName) {
+            alert(`[System]: Initializing live bidding for asset from ${poolName}: ${filename}`);
+        }
+
+        function triggerFileInput() {
+            document.getElementById('file-input').click();
+        }
+
+        function handleFilesSelected(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedImagesArray.push(e.target.result);
+                    renderUploadGrid();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            event.target.value = '';
+        }
+
+        function renderUploadGrid() {
+            const grid = document.getElementById('upload-grid');
+            
+            grid.innerHTML = `
+                <div class="upload-slot add-slot" onclick="triggerFileInput()">
+                    <div class="plus-icon">+</div>
+                    <span>Add Card</span>
+                </div>
+            `;
+
+            const addSlot = grid.firstElementChild;
+
+            selectedImagesArray.forEach((imgSrc, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'upload-slot preview-slot';
+                slot.innerHTML = `
+                    <img src="${imgSrc}" alt="Card Preview">
+                    <button class="remove-btn" onclick="removeImage(${index})">&times;</button>
+                `;
+                grid.insertBefore(slot, addSlot);
+            });
+
+            const submitBtn = document.getElementById('upload-submit-btn');
+            if (selectedImagesArray.length > 0) {
+                submitBtn.removeAttribute('disabled');
+            } else {
+                submitBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        function removeImage(index) {
+            selectedImagesArray.splice(index, 1);
+            renderUploadGrid();
+        }
+
+        async function submitCards() {
+            if (selectedImagesArray.length === 0) return;
+
+            const poolName = document.getElementById('pool-selector').value;
+            const submitBtn = document.getElementById('upload-submit-btn');
+            submitBtn.innerText = 'Saving...';
+
+            try {
+                const response = await fetch('/api/upload-cards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images: selectedImagesArray, poolName: poolName })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✅ Success! ${result.message}`);
+                    selectedImagesArray = [];
+                    renderUploadGrid();
+                    goToScreen(2, 'CARDS_UPLOADED_SUCCESSFULLY');
+                } else {
+                    alert('❌ Upload failed: ' + result.message);
+                }
+            } catch (err) {
+                console.error('Error uploading:', err);
+                alert('❌ Error connecting to server.');
+            } finally {
+                submitBtn.innerText = 'Save to System';
+            }
+        }
+    </script>
+</body>
+</html>
