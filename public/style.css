@@ -7,7 +7,7 @@
 }
 
 body {
-    background-color: #030712;
+    background-color: #050812;
     color: #f3f4f6;
     font-family: 'Rajdhani', sans-serif;
     min-height: 100vh;
@@ -386,14 +386,14 @@ p.subtitle {
     box-shadow: 0 0 20px rgba(157, 0, 255, 0.6);
 }
 
-/* COMPACT LIGHTBOX MODAL WITH HEAVY BLURRED BACKGROUND */
+/* STADIUM-STYLE EPIC MODAL & SWEEPING LIGHTS */
 .fullscreen-modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(3, 7, 18, 0.8);
+    background: radial-gradient(ellipse at 50% 100%, #1b6d79 0%, #10293e 38%, #07101e 76%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     z-index: 9999;
@@ -401,6 +401,7 @@ p.subtitle {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     animation: fadeInModal 0.3s ease-out forwards;
 }
 
@@ -413,62 +414,145 @@ p.subtitle {
     to { opacity: 1; transform: scale(1); }
 }
 
+.arena-lights {
+    position: absolute;
+    inset: -30% 0 20%;
+    background:
+        conic-gradient(from 220deg at 12% 10%, transparent 0 35deg, #a8f7ff35 45deg, transparent 65deg),
+        conic-gradient(from 120deg at 88% 10%, transparent 0 35deg, #fff2b333 45deg, transparent 65deg);
+    filter: blur(14px);
+    animation: arenaSweep 4s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes arenaSweep {
+    from { transform: translateX(-8%) rotate(-4deg); opacity: .6; }
+    to { transform: translateX(8%) rotate(4deg); opacity: 1; }
+}
+
 .scanline-overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
     background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
     background-size: 100% 4px;
-    z-index: 1;
+    z-index: 2;
     pointer-events: none;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
-.fullscreen-hud-content {
-    background: rgba(10, 17, 34, 0.95);
-    border: 1px solid rgba(0, 243, 255, 0.4);
-    box-shadow: 0 0 50px rgba(0, 243, 255, 0.25);
-    border-radius: 20px;
-    padding: 2rem 2.5rem;
-    width: 90%;
-    max-width: 480px;
+.fullscreen-hud-content.arena-reveal-box {
+    background: rgba(7, 16, 30, 0.88);
+    border: 2px solid rgba(0, 243, 255, 0.5);
+    box-shadow: 0 0 70px rgba(0, 243, 255, 0.35), inset 0 0 30px rgba(0, 243, 255, 0.08);
+    border-radius: 24px;
+    padding: 2rem 1rem;
+    width: 98%;
+    max-width: 800px;
     text-align: center;
     position: relative;
-    z-index: 2;
+    z-index: 3;
 }
 
-.glitch-title {
-    font-size: 2rem;
-    color: #ffffff;
-    text-shadow: 0 0 20px rgba(0, 243, 255, 0.8), 0 0 40px rgba(157, 0, 255, 0.6);
-    margin-bottom: 0.3rem;
+.stadium-glitch-title {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    letter-spacing: .08em;
+    color: white;
+    text-shadow: 0 0 12px #7cf7ff, 0 0 35px #00bcd4, 4px 5px #07506c;
+    margin-bottom: 0.2rem;
 }
 
-.random-spotlight-container {
+/* CAROUSEL ROLLER 5-SLOT SLIDING LAYOUT WITH CINEMATIC MOTION BLUR */
+.carousel-roller-container {
+    width: 100%;
+    margin: 1.5rem 0;
+    cursor: pointer;
+    overflow: hidden;
+    padding: 15px 0;
+}
+
+.carousel-track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    transition: transform 0.15s ease-in-out;
+}
+
+/* High-speed motion blur sweeping animation */
+.carousel-track.track-motion-blur {
+    animation: motionBlurWave 0.15s infinite ease-in-out alternate;
+    filter: blur(1.5px);
+}
+
+@keyframes motionBlurWave {
+    0% { transform: translateX(-28px); }
+    100% { transform: translateX(28px); }
+}
+
+.carousel-card {
+    border-radius: 14px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 1rem 0;
-    cursor: pointer;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6);
+    transition: transform 0.2s ease;
 }
 
-/* Right-to-Left Slide Animation */
-.slide-in-right {
-    animation: slideRightToLeft 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+/* Luxury Gold & Random Shifting Back Style */
+.dynamic-gold-card {
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.3);
+    color: #ffd700;
 }
 
-@keyframes slideRightToLeft {
-    0% { transform: translateX(150vw) rotate(15deg); opacity: 0; }
-    100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+.gold-card-emblem {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+    margin-bottom: 4px;
 }
 
-/* 3D FLIP CARD STYLES */
-.flip-card-container {
-    width: 200px;
-    height: 260px;
+.gold-card-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
+    text-align: center;
+    padding: 0 4px;
+}
+
+/* Slot 1 & 5 (Far Outer Cards - Small & Faded) */
+.carousel-card.slot-1, .carousel-card.slot-5 {
+    width: 80px;
+    height: 115px;
+    opacity: 0.35;
+    transform: scale(0.85);
+}
+
+/* Slot 2 & 4 (Mid Inner Cards - Medium) */
+.carousel-card.slot-2, .carousel-card.slot-4 {
+    width: 125px;
+    height: 170px;
+    opacity: 0.75;
+    transform: scale(0.95);
+}
+
+/* Slot 3 (Hero Center Active Slot - Large & Highlighted) */
+.carousel-card.slot-3 {
+    width: 185px;
+    height: 245px;
+    opacity: 1;
+    border: none;
+    transform: scale(1.05);
+    z-index: 5;
     perspective: 1000px;
-    margin: 0.5rem auto;
-    transition: all 0.4s ease;
+    background: transparent;
+    box-shadow: 0 0 40px rgba(0, 243, 255, 0.5);
 }
 
 .flip-card-inner {
@@ -498,40 +582,18 @@ p.subtitle {
     justify-content: center;
 }
 
-/* Gold Cyber Back Face */
-.flip-card-front {
-    background: linear-gradient(135deg, #1a1500, #4d3800, #ffd700);
-    border: 3px solid #ffd700;
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.3);
-    color: #ffd700;
-}
-
-.gold-card-emblem {
-    font-size: 3.2rem;
-    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
-    margin-bottom: 5px;
-}
-
-.gold-card-text {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 800;
-    letter-spacing: 2px;
-    text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
-}
-
-/* Revealed Image Back Face (Clean, No Distortions) */
+/* Revealed Image Back Face */
 .flip-card-back {
     background: #000;
     border: 3px solid #00f3ff;
-    box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
+    box-shadow: 0 0 40px rgba(0, 243, 255, 0.7);
     transform: rotateY(180deg);
 }
 
 .flip-card-back img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     background: #030712;
 }
 
@@ -540,7 +602,7 @@ p.subtitle {
     color: #00f3ff;
     font-size: 0.85rem;
     letter-spacing: 1px;
-    margin-top: 0.5rem;
+    margin-top: 0.8rem;
     text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
 }
 
@@ -549,13 +611,13 @@ p.subtitle {
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
-    margin-top: 0.8rem;
+    margin-top: 1rem;
 }
 
 .cinematic-buttons .cyber-btn {
     margin-bottom: 0;
     flex: 1;
-    min-width: 110px;
+    min-width: 120px;
     padding: 0.7rem;
     font-size: 0.85rem;
 }
