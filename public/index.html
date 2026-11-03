@@ -15,12 +15,24 @@
 
     <div class="container">
         
-        <!-- SCREEN 1: Start Button -->
+        <!-- SCREEN 1: Security Login Terminal -->
         <div id="screen-1" class="screen active">
             <div class="hud-card">
-                <h1>System Ready</h1>
-                <p class="subtitle">Initialize Terminal Session</p>
-                <button class="cyber-btn" onclick="goToScreen(2, 'START_CLICKED')">Start System</button>
+                <h1>Security Protocol</h1>
+                <p class="subtitle">Authenticate Terminal Access</p>
+                
+                <div class="login-form">
+                    <div class="input-group">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" class="cyber-input" placeholder="Enter username...">
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" class="cyber-input" placeholder="Enter password...">
+                    </div>
+                    <div id="login-error" class="login-error-msg"></div>
+                    <button class="cyber-btn" onclick="handleLogin()">Authorize Access</button>
+                </div>
             </div>
         </div>
 
@@ -85,25 +97,44 @@
 
     </div>
 
-    <!-- SCREEN 5: Full-Screen Cinematic Random Draw Spotlight Modal -->
+    <!-- SCREEN 5: Compact Cinematic Random Draw Spotlight Modal with Gold Card Flip -->
     <div id="screen-5" class="fullscreen-modal">
-        <div class="sparkle-overlay"></div>
+        <div class="scanline-overlay"></div>
         <div class="fullscreen-hud-content">
             <h1 id="draw-pool-title" class="glitch-title">Pool Draw</h1>
-            <p class="subtitle">Cinematic Asset Randomizer</p>
+            <p class="subtitle" id="draw-status-subtitle">Tap Card to Stop Sequence</p>
             
-            <div class="random-spotlight-container">
-                <div class="auction-card-slot cinematic-slot" id="spotlight-slot">
-                    <img id="spotlight-img" src="" alt="Random Drawn Card">
+            <div class="random-spotlight-container" onclick="handleSpotlightClick()">
+                <!-- 3D Flip Card Container -->
+                <div class="flip-card-container" id="flip-card-container">
+                    <div class="flip-card-inner" id="flip-card-inner">
+                        <!-- Front Face (Gold Cyber Back) -->
+                        <div class="flip-card-face flip-card-front">
+                            <div class="gold-card-emblem">👑</div>
+                            <div class="gold-card-text">QUANTUM GOLD</div>
+                        </div>
+                        <!-- Back Face (Revealed Image Clean View) -->
+                        <div class="flip-card-face flip-card-back">
+                            <img id="spotlight-img" src="" alt="Random Drawn Card">
+                        </div>
+                    </div>
                 </div>
-                <div class="spotlight-info" id="spotlight-filename">Initializing draw...</div>
+                <div class="spotlight-info" id="spotlight-filename">Initializing sequence...</div>
             </div>
 
             <div class="button-group cinematic-buttons">
                 <button class="cyber-btn secondary" onclick="goToScreen(4, 'BACK_TO_POOLS')">Back to Pools</button>
-                <button class="cyber-btn danger" id="discard-btn" onclick="">Discard Card</button>
-                <button class="cyber-btn" id="redraw-btn" onclick="">🎲 Draw Another</button>
+                <button class="cyber-btn danger" id="discard-btn" style="display:none;" onclick="">Discard Card</button>
+                <button class="cyber-btn" id="redraw-btn" style="display:none;" onclick="">🎲 Draw Another</button>
             </div>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX POPUP VIEWER TRIGGERED AFTER DRAW -->
+    <div id="image-lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="Enlarged Drawn Card View">
+            <p class="lightbox-hint">Tap anywhere to close</p>
         </div>
     </div>
 
@@ -112,6 +143,21 @@
         let currentPoolCardsCache = {};
         let activeDrawnCardFilename = null;
         let activePoolName = null;
+        let shuffleTimer = null;
+        let isDrawCompleted = false;
+
+        function handleLogin() {
+            const userInput = document.getElementById('login-username').value.trim();
+            const passInput = document.getElementById('login-password').value.trim();
+            const errorElement = document.getElementById('login-error');
+
+            if (userInput === "KalaKerala" && passInput === "kalakerala@26") {
+                errorElement.innerText = "";
+                goToScreen(2, 'SUCCESSFUL_LOGIN');
+            } else {
+                errorElement.innerText = "ACCESS DENIED: Invalid credentials.";
+            }
+        }
 
         async function goToScreen(screenNumber, actionName) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -168,9 +214,9 @@
                         let cardsHTML = '';
                         pools[poolName].forEach(filename => {
                             cardsHTML += `
-                                <div class="auction-card-slot">
+                                <div class="auction-card-slot" onclick="openLightbox('/uploads/${filename}')">
                                     <img src="/uploads/${filename}" alt="Auction Card">
-                                    <div class="card-overlay">
+                                    <div class="card-overlay" onclick="event.stopPropagation()">
                                         <button class="cyber-btn small" onclick="startBidding('${filename}', '${poolName}')">Bid</button>
                                     </div>
                                 </div>
@@ -196,6 +242,26 @@
             }
         }
 
+        // Lightbox Functions
+        function openLightbox(imgSrc) {
+            document.getElementById('lightbox-img').src = imgSrc;
+            document.getElementById('image-lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('image-lightbox').classList.remove('active');
+        }
+
+        // Handle clicking the spotlight card: Stops draw if running, or opens Lightbox if draw is completed!
+        function handleSpotlightClick() {
+            if (!isDrawCompleted) {
+                manualStopDraw();
+            } else if (activeDrawnCardFilename) {
+                openLightbox(`/uploads/${activeDrawnCardFilename}`);
+            }
+        }
+
+        // Right-to-Left Sliding & Gold Card Flip Draw Sequence
         function drawRandomFromPool(poolName) {
             const poolCards = currentPoolCardsCache[poolName];
             if (!poolCards || poolCards.length === 0) {
@@ -204,47 +270,82 @@
             }
 
             activePoolName = poolName;
+            isDrawCompleted = false;
             goToScreen(5, 'OPEN_RANDOM_DRAW_SPOTLIGHT');
 
-            document.getElementById('draw-pool-title').innerText = `${poolName} - Random Draw`;
+            document.getElementById('draw-pool-title').innerText = `${poolName} - Quantum Draw`;
+            document.getElementById('redraw-btn').style.display = 'none';
+            document.getElementById('discard-btn').style.display = 'none';
             document.getElementById('redraw-btn').setAttribute('onclick', `drawRandomFromPool('${poolName}')`);
 
             const imgElement = document.getElementById('spotlight-img');
             const infoElement = document.getElementById('spotlight-filename');
-            
-            infoElement.innerText = "⚡ Shuffling pool vault with quantum energy...";
-            imgElement.style.opacity = "0.3";
-            imgElement.classList.remove('popped-card');
+            const subtitleElement = document.getElementById('draw-status-subtitle');
+            const flipContainer = document.getElementById('flip-card-container');
+            const flipInner = document.getElementById('flip-card-inner');
 
-            let shuffleCount = 0;
-            const shuffleInterval = setInterval(() => {
+            // Reset view state
+            flipContainer.classList.remove('slide-in-right');
+            flipInner.classList.remove('flipped');
+            void flipContainer.offsetWidth; // trigger reflow
+            flipContainer.classList.add('slide-in-right');
+
+            subtitleElement.innerText = "⚡ Tap Card to Stop & Flip!";
+            infoElement.innerText = "Shuffling vault assets...";
+            
+            let elapsed = 0;
+            const totalDuration = 8000; // 8 seconds default
+            const intervalTime = 80;
+
+            if (shuffleTimer) clearInterval(shuffleTimer);
+
+            shuffleTimer = setInterval(() => {
+                elapsed += intervalTime;
                 const randomTempCard = poolCards[Math.floor(Math.random() * poolCards.length)];
                 imgElement.src = `/uploads/${randomTempCard}`;
-                shuffleCount++;
 
-                if (shuffleCount > 10) {
-                    clearInterval(shuffleInterval);
-                    const randomIndex = Math.floor(Math.random() * poolCards.length);
-                    activeDrawnCardFilename = poolCards[randomIndex];
-
-                    imgElement.src = `/uploads/${activeDrawnCardFilename}`;
-                    imgElement.style.opacity = "1";
-                    imgElement.classList.add('popped-card');
-                    infoElement.innerText = `🎉 Selected Asset: ${activeDrawnCardFilename}`;
-
-                    document.getElementById('discard-btn').setAttribute('onclick', `discardActiveCard('${poolName}', '${activeDrawnCardFilename}')`);
-
-                    triggerCelebrationPoppers();
+                if (elapsed >= totalDuration && !isDrawCompleted) {
+                    manualStopDraw();
                 }
-            }, 70);
+            }, intervalTime);
+        }
+
+        function manualStopDraw() {
+            if (isDrawCompleted) return;
+            isDrawCompleted = true;
+
+            if (shuffleTimer) clearInterval(shuffleTimer);
+
+            const poolCards = currentPoolCardsCache[activePoolName];
+            const finalIndex = Math.floor(Math.random() * poolCards.length);
+            activeDrawnCardFilename = poolCards[finalIndex];
+
+            const imgElement = document.getElementById('spotlight-img');
+            const infoElement = document.getElementById('spotlight-filename');
+            const subtitleElement = document.getElementById('draw-status-subtitle');
+            const flipInner = document.getElementById('flip-card-inner');
+
+            imgElement.src = `/uploads/${activeDrawnCardFilename}`;
+            
+            // Trigger Gold Card Flip
+            flipInner.classList.add('flipped');
+
+            subtitleElement.innerText = "✨ ACQUIRED! (Tap card to enlarge)";
+            infoElement.innerText = `Asset ID: ${activeDrawnCardFilename}`;
+
+            document.getElementById('redraw-btn').style.display = 'block';
+            document.getElementById('discard-btn').style.display = 'block';
+            document.getElementById('discard-btn').setAttribute('onclick', `discardActiveCard('${activePoolName}', '${activeDrawnCardFilename}')`);
+
+            triggerCelebrationPoppers();
         }
 
         function triggerCelebrationPoppers() {
             confetti({
-                particleCount: 120,
-                spread: 90,
-                origin: { y: 0.6 },
-                colors: ['#00f3ff', '#9d00ff', '#ffffff', '#ff007f']
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.5 },
+                colors: ['#ffd700', '#00f3ff', '#9d00ff', '#ffffff']
             });
         }
 
@@ -317,7 +418,7 @@
                 const slot = document.createElement('div');
                 slot.className = 'upload-slot preview-slot';
                 slot.innerHTML = `
-                    <img src="${imgSrc}" alt="Card Preview">
+                    <img src="${imgSrc}" alt="Card Preview" onclick="openLightbox('${imgSrc}')">
                     <button class="remove-btn" onclick="removeImage(${index})">&times;</button>
                 `;
                 grid.insertBefore(slot, addSlot);
