@@ -97,33 +97,63 @@
 
     </div>
 
-    <!-- SCREEN 5: Compact Cinematic Random Draw Spotlight Modal with Gold Card Flip -->
+    <!-- SCREEN 5: Cinematic Sliding Carousel Roller Draw Modal -->
     <div id="screen-5" class="fullscreen-modal">
+        <div class="arena-lights"></div>
         <div class="scanline-overlay"></div>
-        <div class="fullscreen-hud-content">
-            <h1 id="draw-pool-title" class="glitch-title">Pool Draw</h1>
-            <p class="subtitle" id="draw-status-subtitle">Tap Card to Stop Sequence</p>
+        <div class="fullscreen-hud-content arena-reveal-box extra-wide-modal">
+            <h1 id="draw-pool-title" class="stadium-glitch-title">POOL CAROUSEL DRAW</h1>
+            <p class="subtitle" id="draw-status-subtitle">TAP ROLLER OR BUTTON TO STOP</p>
             
-            <div class="random-spotlight-container" onclick="handleSpotlightClick()">
-                <!-- 3D Flip Card Container -->
-                <div class="flip-card-container" id="flip-card-container">
-                    <div class="flip-card-inner" id="flip-card-inner">
-                        <!-- Front Face (Gold Cyber Back) -->
-                        <div class="flip-card-face flip-card-front">
-                            <div class="gold-card-emblem">👑</div>
-                            <div class="gold-card-text">QUANTUM GOLD</div>
-                        </div>
-                        <!-- Back Face (Revealed Image Clean View) -->
-                        <div class="flip-card-face flip-card-back">
-                            <img id="spotlight-img" src="" alt="Random Drawn Card">
+            <!-- 5-Slot Cinematic Sliding Carousel Container -->
+            <div class="carousel-roller-container" onclick="handleRollerClick()">
+                <div class="carousel-track" id="carousel-track">
+                    
+                    <!-- Slot 1 (Far Left Peek) -->
+                    <div class="carousel-card slot-1 dynamic-gold-card" id="card-slot-1">
+                        <div class="gold-card-emblem">👑</div>
+                        <div class="gold-card-text">KALA KERALA</div>
+                    </div>
+
+                    <!-- Slot 2 (Mid Left) -->
+                    <div class="carousel-card slot-2 dynamic-gold-card" id="card-slot-2">
+                        <div class="gold-card-emblem">👑</div>
+                        <div class="gold-card-text">KALA KERALA</div>
+                    </div>
+                    
+                    <!-- Slot 3 (Hero Center Active Slot with 3D Flip) -->
+                    <div class="carousel-card slot-3 active-center" onclick="handleCenterCardClick(event)">
+                        <div class="flip-card-inner" id="carousel-flip-inner">
+                            <div class="flip-card-face flip-card-front dynamic-gold-card" id="card-slot-3">
+                                <div class="gold-card-emblem">👑</div>
+                                <div class="gold-card-text">KALA KERALA</div>
+                            </div>
+                            <div class="flip-card-face flip-card-back">
+                                <img id="c-img-3" src="" alt="Winner Center">
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Slot 4 (Mid Right) -->
+                    <div class="carousel-card slot-4 dynamic-gold-card" id="card-slot-4">
+                        <div class="gold-card-emblem">👑</div>
+                        <div class="gold-card-text">KALA KERALA</div>
+                    </div>
+
+                    <!-- Slot 5 (Far Right Peek) -->
+                    <div class="carousel-card slot-5 dynamic-gold-card" id="card-slot-5">
+                        <div class="gold-card-emblem">👑</div>
+                        <div class="gold-card-text">KALA KERALA</div>
+                    </div>
+
                 </div>
-                <div class="spotlight-info" id="spotlight-filename">Initializing sequence...</div>
             </div>
+
+            <div class="spotlight-info" id="spotlight-filename">Initializing cinematic roller...</div>
 
             <div class="button-group cinematic-buttons">
                 <button class="cyber-btn secondary" onclick="goToScreen(4, 'BACK_TO_POOLS')">Back to Pools</button>
+                <button class="cyber-btn secondary" id="stop-roller-btn" onclick="manualStopDraw()">⚡ Stop & Select</button>
                 <button class="cyber-btn danger" id="discard-btn" style="display:none;" onclick="">Discard Card</button>
                 <button class="cyber-btn" id="redraw-btn" style="display:none;" onclick="">🎲 Draw Another</button>
             </div>
@@ -143,8 +173,17 @@
         let currentPoolCardsCache = {};
         let activeDrawnCardFilename = null;
         let activePoolName = null;
-        let shuffleTimer = null;
+        let rollerTimer = null;
         let isDrawCompleted = false;
+
+        const goldAndColorPalette = [
+            'linear-gradient(135deg, #2b2100, #735500, #ffd700)',
+            'linear-gradient(135deg, #1a1000, #997400, #ffea75)',
+            'linear-gradient(135deg, #382900, #5c4300, #e6c200)',
+            'linear-gradient(135deg, #1f1400, #806000, #ffcc00)',
+            'linear-gradient(135deg, #261c00, #b38600, #fff099)',
+            'linear-gradient(135deg, #0a192f, #172a45, #00f3ff)'
+        ];
 
         function handleLogin() {
             const userInput = document.getElementById('login-username').value.trim();
@@ -242,7 +281,6 @@
             }
         }
 
-        // Lightbox Functions
         function openLightbox(imgSrc) {
             document.getElementById('lightbox-img').src = imgSrc;
             document.getElementById('image-lightbox').classList.add('active');
@@ -252,16 +290,20 @@
             document.getElementById('image-lightbox').classList.remove('active');
         }
 
-        // Handle clicking the spotlight card: Stops draw if running, or opens Lightbox if draw is completed!
-        function handleSpotlightClick() {
+        function handleRollerClick() {
             if (!isDrawCompleted) {
                 manualStopDraw();
-            } else if (activeDrawnCardFilename) {
+            }
+        }
+
+        function handleCenterCardClick(event) {
+            if (isDrawCompleted && activeDrawnCardFilename) {
+                event.stopPropagation();
                 openLightbox(`/uploads/${activeDrawnCardFilename}`);
             }
         }
 
-        // Right-to-Left Sliding & Gold Card Flip Draw Sequence
+        // High-Speed Cinematic Carousel Roller Animation (Exact Video Match)
         function drawRandomFromPool(poolName) {
             const poolCards = currentPoolCardsCache[poolName];
             if (!poolCards || poolCards.length === 0) {
@@ -271,68 +313,58 @@
 
             activePoolName = poolName;
             isDrawCompleted = false;
-            goToScreen(5, 'OPEN_RANDOM_DRAW_SPOTLIGHT');
+            goToScreen(5, 'OPEN_CAROUSEL_DRAW');
 
-            document.getElementById('draw-pool-title').innerText = `${poolName} - Quantum Draw`;
+            document.getElementById('draw-pool-title').innerText = `${poolName} - CAROUSEL DRAW`;
             document.getElementById('redraw-btn').style.display = 'none';
             document.getElementById('discard-btn').style.display = 'none';
+            document.getElementById('stop-roller-btn').style.display = 'block';
             document.getElementById('redraw-btn').setAttribute('onclick', `drawRandomFromPool('${poolName}')`);
 
-            const imgElement = document.getElementById('spotlight-img');
-            const infoElement = document.getElementById('spotlight-filename');
+            document.getElementById('carousel-flip-inner').classList.remove('flipped');
+            const trackEl = document.getElementById('carousel-track');
+            trackEl.classList.add('track-motion-blur');
+
             const subtitleElement = document.getElementById('draw-status-subtitle');
-            const flipContainer = document.getElementById('flip-card-container');
-            const flipInner = document.getElementById('flip-card-inner');
-
-            // Reset view state
-            flipContainer.classList.remove('slide-in-right');
-            flipInner.classList.remove('flipped');
-            void flipContainer.offsetWidth; // trigger reflow
-            flipContainer.classList.add('slide-in-right');
-
-            subtitleElement.innerText = "⚡ Tap Card to Stop & Flip!";
+            const infoElement = document.getElementById('spotlight-filename');
+            subtitleElement.innerText = "⚡ ROLLER SPINNING FAST... TAP TO STOP!";
             infoElement.innerText = "Shuffling vault assets...";
-            
-            let elapsed = 0;
-            const totalDuration = 8000; // 8 seconds default
-            const intervalTime = 80;
 
-            if (shuffleTimer) clearInterval(shuffleTimer);
+            if (rollerTimer) clearInterval(rollerTimer);
 
-            shuffleTimer = setInterval(() => {
-                elapsed += intervalTime;
-                const randomTempCard = poolCards[Math.floor(Math.random() * poolCards.length)];
-                imgElement.src = `/uploads/${randomTempCard}`;
-
-                if (elapsed >= totalDuration && !isDrawCompleted) {
-                    manualStopDraw();
+            rollerTimer = setInterval(() => {
+                for (let i = 1; i <= 5; i++) {
+                    const cardEl = document.getElementById(`card-slot-${i}`);
+                    if (cardEl) {
+                        const randomGrad = goldAndColorPalette[Math.floor(Math.random() * goldAndColorPalette.length)];
+                        cardEl.style.background = randomGrad;
+                    }
                 }
-            }, intervalTime);
+            }, 50);
         }
 
         function manualStopDraw() {
             if (isDrawCompleted) return;
             isDrawCompleted = true;
 
-            if (shuffleTimer) clearInterval(shuffleTimer);
+            if (rollerTimer) clearInterval(rollerTimer);
+            const trackEl = document.getElementById('carousel-track');
+            trackEl.classList.remove('track-motion-blur');
 
             const poolCards = currentPoolCardsCache[activePoolName];
             const finalIndex = Math.floor(Math.random() * poolCards.length);
             activeDrawnCardFilename = poolCards[finalIndex];
 
-            const imgElement = document.getElementById('spotlight-img');
-            const infoElement = document.getElementById('spotlight-filename');
-            const subtitleElement = document.getElementById('draw-status-subtitle');
-            const flipInner = document.getElementById('flip-card-inner');
-
-            imgElement.src = `/uploads/${activeDrawnCardFilename}`;
+            // Set final winner image in center slot back face
+            document.getElementById('c-img-3').src = `/uploads/${activeDrawnCardFilename}`;
             
-            // Trigger Gold Card Flip
-            flipInner.classList.add('flipped');
+            // Trigger smooth 3D flip card reveal
+            document.getElementById('carousel-flip-inner').classList.add('flipped');
 
-            subtitleElement.innerText = "✨ ACQUIRED! (Tap card to enlarge)";
-            infoElement.innerText = `Asset ID: ${activeDrawnCardFilename}`;
+            document.getElementById('draw-status-subtitle').innerText = "🔥 WINNER LOCKED! (Tap center card to enlarge)";
+            document.getElementById('spotlight-filename').innerText = `Asset ID: ${activeDrawnCardFilename}`;
 
+            document.getElementById('stop-roller-btn').style.display = 'none';
             document.getElementById('redraw-btn').style.display = 'block';
             document.getElementById('discard-btn').style.display = 'block';
             document.getElementById('discard-btn').setAttribute('onclick', `discardActiveCard('${activePoolName}', '${activeDrawnCardFilename}')`);
