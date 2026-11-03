@@ -66,7 +66,7 @@ body::before {
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Glassmorphism Card Wrapper - Enlarged Interface */
+/* Glassmorphism Card Wrapper */
 .hud-card {
     background: rgba(10, 17, 34, 0.75);
     border: 1px solid rgba(0, 243, 255, 0.25);
@@ -114,6 +114,56 @@ p.subtitle {
     font-size: 1.2rem;
     margin-bottom: 2rem;
     letter-spacing: 1px;
+}
+
+/* Login Form Input Fields */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    text-align: left;
+    margin-top: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    color: #00f3ff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.cyber-input {
+    background: #030712;
+    color: #ffffff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.05);
+}
+
+.cyber-input:focus {
+    border-color: #00f3ff;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3), inset 0 0 10px rgba(0, 243, 255, 0.1);
+}
+
+.login-error-msg {
+    color: #ef4444;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-align: center;
+    min-height: 20px;
 }
 
 /* Pool Selector Dropdown Styling */
@@ -287,6 +337,7 @@ p.subtitle {
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
+    z-index: 2;
 }
 
 .preview-slot .remove-btn:hover {
@@ -335,21 +386,22 @@ p.subtitle {
     box-shadow: 0 0 20px rgba(157, 0, 255, 0.6);
 }
 
-/* FULL-SCREEN CINEMATIC SPOTLIGHT MODAL */
+/* COMPACT LIGHTBOX MODAL WITH HEAVY BLURRED BACKGROUND */
 .fullscreen-modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(3, 7, 18, 0.92);
+    background: rgba(3, 7, 18, 0.8);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 9999;
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    animation: fadeInModal 0.4s ease-out forwards;
+    animation: fadeInModal 0.3s ease-out forwards;
 }
 
 .fullscreen-modal.active {
@@ -361,22 +413,34 @@ p.subtitle {
     to { opacity: 1; transform: scale(1); }
 }
 
+.scanline-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
 .fullscreen-hud-content {
-    background: rgba(10, 17, 34, 0.85);
-    border: 2px solid #00f3ff;
-    box-shadow: 0 0 60px rgba(0, 243, 255, 0.3), inset 0 0 30px rgba(0, 243, 255, 0.05);
-    border-radius: 24px;
-    padding: 4rem;
+    background: rgba(10, 17, 34, 0.95);
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    box-shadow: 0 0 50px rgba(0, 243, 255, 0.25);
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
     width: 90%;
-    max-width: 650px;
+    max-width: 480px;
     text-align: center;
     position: relative;
+    z-index: 2;
 }
 
 .glitch-title {
-    font-size: 2.6rem;
+    font-size: 2rem;
     color: #ffffff;
     text-shadow: 0 0 20px rgba(0, 243, 255, 0.8), 0 0 40px rgba(157, 0, 255, 0.6);
+    margin-bottom: 0.3rem;
 }
 
 .random-spotlight-container {
@@ -384,53 +448,165 @@ p.subtitle {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 2rem 0;
+    margin: 1rem 0;
+    cursor: pointer;
 }
 
-.auction-card-slot.cinematic-slot {
-    width: 260px;
-    height: 320px;
-    border: 3px solid #00f3ff;
-    box-shadow: 0 0 45px rgba(0, 243, 255, 0.6), inset 0 0 20px rgba(0, 243, 255, 0.2);
-    border-radius: 16px;
-    margin-bottom: 1.5rem;
-    background: #000;
+/* Right-to-Left Slide Animation */
+.slide-in-right {
+    animation: slideRightToLeft 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-.auction-card-slot.cinematic-slot img {
+@keyframes slideRightToLeft {
+    0% { transform: translateX(150vw) rotate(15deg); opacity: 0; }
+    100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+}
+
+/* 3D FLIP CARD STYLES */
+.flip-card-container {
+    width: 200px;
+    height: 260px;
+    perspective: 1000px;
+    margin: 0.5rem auto;
+    transition: all 0.4s ease;
+}
+
+.flip-card-inner {
+    position: relative;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease, opacity 0.1s ease;
+    text-align: center;
+    transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
 }
 
-/* Popped celebration scale animation */
-.popped-card {
-    animation: popCardIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+.flip-card-inner.flipped {
+    transform: rotateY(180deg);
 }
 
-@keyframes popCardIn {
-    0% { transform: scale(0.7); filter: brightness(2); }
-    100% { transform: scale(1); filter: brightness(1); }
+.flip-card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Gold Cyber Back Face */
+.flip-card-front {
+    background: linear-gradient(135deg, #1a1500, #4d3800, #ffd700);
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.3);
+    color: #ffd700;
+}
+
+.gold-card-emblem {
+    font-size: 3.2rem;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+    margin-bottom: 5px;
+}
+
+.gold-card-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Revealed Image Back Face (Clean, No Distortions) */
+.flip-card-back {
+    background: #000;
+    border: 3px solid #00f3ff;
+    box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
+    transform: rotateY(180deg);
+}
+
+.flip-card-back img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #030712;
 }
 
 .spotlight-info {
     font-family: 'Orbitron', sans-serif;
     color: #00f3ff;
-    font-size: 1.2rem;
-    letter-spacing: 1.5px;
-    text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    margin-top: 0.5rem;
+    text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
 }
 
 .cinematic-buttons {
     display: flex;
-    gap: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
     justify-content: center;
-    margin-top: 1rem;
+    margin-top: 0.8rem;
 }
 
 .cinematic-buttons .cyber-btn {
     margin-bottom: 0;
+    flex: 1;
+    min-width: 110px;
+    padding: 0.7rem;
+    font-size: 0.85rem;
+}
+
+/* LIGHTBOX POPUP STYLES */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(3, 7, 18, 0.85);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInModal 0.25s ease-out forwards;
+}
+
+.lightbox-overlay.active {
+    display: flex;
+}
+
+.lightbox-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 90vw;
+    max-height: 90vh;
+    padding: 10px;
+}
+
+#lightbox-img {
+    max-width: 85vw;
+    max-height: 75vh;
+    object-fit: contain;
+    border: 2px solid #00f3ff;
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(0, 243, 255, 0.5);
+    background: #000;
+}
+
+.lightbox-hint {
+    font-family: 'Orbitron', sans-serif;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    letter-spacing: 1px;
 }
 
 /* Auction Card Gallery Grid */
@@ -452,6 +628,7 @@ p.subtitle {
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .auction-card-slot:hover {
@@ -477,6 +654,12 @@ p.subtitle {
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
+}
+
+.auction-pools-container {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px;
 }
 
 .auction-card-slot:hover .card-overlay {
