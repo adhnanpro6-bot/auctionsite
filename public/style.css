@@ -18,7 +18,6 @@ body {
     position: relative;
 }
 
-/* Sci-fi grid background overlay */
 body::before {
     content: "";
     position: absolute;
@@ -30,7 +29,6 @@ body::before {
     z-index: -1;
 }
 
-/* Ambient glow orbs */
 .orb {
     position: absolute;
     width: 500px;
@@ -42,6 +40,31 @@ body::before {
 }
 .orb-1 { background: #00f3ff; top: -10%; left: -10%; }
 .orb-2 { background: #9d00ff; bottom: -10%; right: -10%; }
+
+.system-toast {
+    position: fixed;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    background: rgba(7, 16, 30, 0.95);
+    border: 1px solid #00f3ff;
+    color: #00f3ff;
+    padding: 0.8rem 1.8rem;
+    border-radius: 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.4);
+    z-index: 20000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.system-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
 
 .container {
     width: 100%;
@@ -66,7 +89,6 @@ body::before {
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Glassmorphism Card Wrapper */
 .hud-card {
     background: rgba(10, 17, 34, 0.75);
     border: 1px solid rgba(0, 243, 255, 0.25);
@@ -78,15 +100,9 @@ body::before {
     position: relative;
 }
 
-.hud-card.wide {
-    max-width: 720px;
-}
+.hud-card.wide { max-width: 720px; }
+.hud-card.extra-wide { max-width: 850px; }
 
-.hud-card.extra-wide {
-    max-width: 850px;
-}
-
-/* Tech corner accents */
 .hud-card::before, .hud-card::after {
     content: "";
     position: absolute;
@@ -116,7 +132,6 @@ p.subtitle {
     letter-spacing: 1px;
 }
 
-/* Login Form Input Fields */
 .login-form {
     display: flex;
     flex-direction: column;
@@ -166,7 +181,6 @@ p.subtitle {
     min-height: 20px;
 }
 
-/* Pool Selector Dropdown Styling */
 .pool-select-container {
     display: flex;
     align-items: center;
@@ -205,7 +219,6 @@ p.subtitle {
     color: #ffffff;
 }
 
-/* Futuristic Buttons */
 .cyber-btn {
     width: 100%;
     padding: 1.2rem;
@@ -245,6 +258,18 @@ p.subtitle {
     box-shadow: 0 0 25px rgba(157, 0, 255, 0.6);
 }
 
+.cyber-btn.warning {
+    border-color: #ffd700;
+    color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.15);
+}
+
+.cyber-btn.warning:hover {
+    background: #ffd700;
+    color: #030712;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+}
+
 .cyber-btn.danger {
     border-color: #ef4444;
     color: #fca5a5;
@@ -266,7 +291,137 @@ p.subtitle {
     transform: none;
 }
 
-/* Image Upload Grid Layout */
+.team-input-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 2rem;
+}
+
+.add-team-btn {
+    width: 65px;
+    margin-bottom: 0;
+    font-size: 1.8rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+.teams-container {
+    max-height: 380px;
+    overflow-y: auto;
+    text-align: left;
+    padding-right: 5px;
+}
+
+.team-box {
+    background: rgba(3, 7, 18, 0.7);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+}
+
+.team-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.team-box-header h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: #00f3ff;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.team-balance-badge {
+    color: #ffd700;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+.delete-team-btn {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    margin-bottom: 0;
+    width: auto;
+}
+
+.team-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+}
+
+.team-card-thumb-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(3, 7, 18, 0.9);
+    border: 1px solid rgba(0, 243, 255, 0.3);
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.team-card-thumb {
+    width: 100%;
+    height: 95px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.team-card-thumb:hover { transform: scale(1.05); }
+
+.team-card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-price-tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    color: #ffd700;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+.no-cards-msg {
+    color: #64748b;
+    font-size: 0.95rem;
+    font-style: italic;
+}
+
+.sold-teams-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+.sold-teams-list .cyber-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1.2rem;
+}
+
 .upload-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -340,11 +495,8 @@ p.subtitle {
     z-index: 2;
 }
 
-.preview-slot .remove-btn:hover {
-    background: rgb(239, 68, 68);
-}
+.preview-slot .remove-btn:hover { background: rgb(239, 68, 68); }
 
-/* Auction Pools Container */
 .auction-pools-container {
     max-height: 400px;
     overflow-y: auto;
@@ -386,7 +538,6 @@ p.subtitle {
     box-shadow: 0 0 20px rgba(157, 0, 255, 0.6);
 }
 
-/* STADIUM-STYLE EPIC MODAL & SWEEPING LIGHTS */
 .fullscreen-modal {
     position: fixed;
     top: 0;
@@ -405,9 +556,7 @@ p.subtitle {
     animation: fadeInModal 0.3s ease-out forwards;
 }
 
-.fullscreen-modal.active {
-    display: flex;
-}
+.fullscreen-modal.active { display: flex; }
 
 @keyframes fadeInModal {
     from { opacity: 0; transform: scale(0.96); }
@@ -463,7 +612,6 @@ p.subtitle {
     margin-bottom: 0.2rem;
 }
 
-/* CAROUSEL ROLLER 5-SLOT SLIDING LAYOUT WITH CINEMATIC MOTION BLUR */
 .carousel-roller-container {
     width: 100%;
     margin: 1.5rem 0;
@@ -481,7 +629,6 @@ p.subtitle {
     transition: transform 0.15s ease-in-out;
 }
 
-/* High-speed motion blur sweeping animation */
 .carousel-track.track-motion-blur {
     animation: motionBlurWave 0.15s infinite ease-in-out alternate;
     filter: blur(1.5px);
@@ -503,7 +650,6 @@ p.subtitle {
     transition: transform 0.2s ease;
 }
 
-/* Luxury Gold & Random Shifting Back Style */
 .dynamic-gold-card {
     border: 3px solid #ffd700;
     box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.3);
@@ -526,7 +672,6 @@ p.subtitle {
     padding: 0 4px;
 }
 
-/* Slot 1 & 5 (Far Outer Cards - Small & Faded) */
 .carousel-card.slot-1, .carousel-card.slot-5 {
     width: 80px;
     height: 115px;
@@ -534,7 +679,6 @@ p.subtitle {
     transform: scale(0.85);
 }
 
-/* Slot 2 & 4 (Mid Inner Cards - Medium) */
 .carousel-card.slot-2, .carousel-card.slot-4 {
     width: 125px;
     height: 170px;
@@ -542,7 +686,6 @@ p.subtitle {
     transform: scale(0.95);
 }
 
-/* Slot 3 (Hero Center Active Slot - Large & Highlighted) */
 .carousel-card.slot-3 {
     width: 185px;
     height: 245px;
@@ -564,9 +707,7 @@ p.subtitle {
     transform-style: preserve-3d;
 }
 
-.flip-card-inner.flipped {
-    transform: rotateY(180deg);
-}
+.flip-card-inner.flipped { transform: rotateY(180deg); }
 
 .flip-card-face {
     position: absolute;
@@ -582,7 +723,6 @@ p.subtitle {
     justify-content: center;
 }
 
-/* Revealed Image Back Face */
 .flip-card-back {
     background: #000;
     border: 3px solid #00f3ff;
@@ -622,7 +762,6 @@ p.subtitle {
     font-size: 0.85rem;
 }
 
-/* LIGHTBOX POPUP STYLES */
 .lightbox-overlay {
     position: fixed;
     top: 0;
@@ -639,9 +778,7 @@ p.subtitle {
     animation: fadeInModal 0.25s ease-out forwards;
 }
 
-.lightbox-overlay.active {
-    display: flex;
-}
+.lightbox-overlay.active { display: flex; }
 
 .lightbox-content {
     display: flex;
@@ -671,7 +808,6 @@ p.subtitle {
     letter-spacing: 1px;
 }
 
-/* Auction Card Gallery Grid */
 .auction-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -718,15 +854,7 @@ p.subtitle {
     transition: opacity 0.3s ease;
 }
 
-.auction-pools-container {
-    max-height: 400px;
-    overflow-y: auto;
-    padding-right: 5px;
-}
-
-.auction-card-slot:hover .card-overlay {
-    opacity: 1;
-}
+.auction-card-slot:hover .card-overlay { opacity: 1; }
 
 .cyber-btn.small {
     padding: 0.4rem 0.8rem;
@@ -747,6 +875,4 @@ p.subtitle {
     gap: 15px;
 }
 
-.button-group .cyber-btn {
-    margin-bottom: 0;
-}
+.button-group .cyber-btn { margin-bottom: 0; }
