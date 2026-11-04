@@ -1,12 +1,21 @@
 {
-  "name": "futuristic-auction",
+  "name": "futuristic-auction-terminal",
   "version": "1.0.0",
-  "description": "Futuristic Auction Terminal",
+  "description": "Futuristic live auction management system with pool sorting and local disk persistence",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2"
-  }
+  },
+  "keywords": [
+    "auction",
+    "terminal",
+    "express",
+    "node"
+  ],
+  "author": "",
+  "license": "ISC"
 }
