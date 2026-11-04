@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Futuristic Auction Terminal</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Canvas Confetti library for celebration poppers -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
+
+    <div id="system-toast" class="system-toast">
+        <span id="toast-message">Notification message here</span>
+    </div>
 
     <div class="container">
         
@@ -43,10 +46,11 @@
                 <p class="subtitle">Select Operation Mode</p>
                 <button class="cyber-btn" onclick="goToScreen(4, 'START_AUCTION')">1. Start Auction</button>
                 <button class="cyber-btn secondary" onclick="goToScreen(3, 'UPLOAD_CARD_CLICKED')">2. Upload Card</button>
+                <button class="cyber-btn warning" onclick="goToScreen(6, 'TEAM_MANAGEMENT_CLICKED')">3. Team Management</button>
             </div>
         </div>
 
-        <!-- SCREEN 3: Upload Card Interface with Pool Selector & "+" Icon -->
+        <!-- SCREEN 3: Upload Card Interface -->
         <div id="screen-3" class="screen">
             <div class="hud-card wide">
                 <h1>Card Uploader</h1>
@@ -79,7 +83,7 @@
             </div>
         </div>
 
-        <!-- SCREEN 4: Start Auction Filtered by Pools & Random Drawer -->
+        <!-- SCREEN 4: Start Auction Arena -->
         <div id="screen-4" class="screen">
             <div class="hud-card wide extra-wide">
                 <h1>Auction Arena</h1>
@@ -95,6 +99,27 @@
             </div>
         </div>
 
+        <!-- SCREEN 6: Team Management Screen -->
+        <div id="screen-6" class="screen">
+            <div class="hud-card wide extra-wide">
+                <h1>Team Management</h1>
+                <p class="subtitle">Create Teams & Inspect Acquired Sold Cards</p>
+                
+                <div class="team-input-row">
+                    <input type="text" id="new-team-input" class="cyber-input" placeholder="Enter new team name...">
+                    <button class="cyber-btn add-team-btn" onclick="openTeamBudgetModal()">+</button>
+                </div>
+
+                <div class="teams-container" id="teams-container">
+                    <p class="loading-text">No teams created yet. Add your first team above!</p>
+                </div>
+
+                <div class="button-group" style="margin-top: 1.5rem;">
+                    <button class="cyber-btn secondary" onclick="goToScreen(2, 'BACK_FROM_TEAMS')">Back to Hub</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- SCREEN 5: Cinematic Sliding Carousel Roller Draw Modal -->
@@ -105,23 +130,16 @@
             <h1 id="draw-pool-title" class="stadium-glitch-title">POOL CAROUSEL DRAW</h1>
             <p class="subtitle" id="draw-status-subtitle">TAP ROLLER OR BUTTON TO STOP</p>
             
-            <!-- 5-Slot Cinematic Sliding Carousel Container -->
             <div class="carousel-roller-container" onclick="handleRollerClick()">
                 <div class="carousel-track" id="carousel-track">
-                    
-                    <!-- Slot 1 (Far Left Peek) -->
                     <div class="carousel-card slot-1 dynamic-gold-card" id="card-slot-1">
                         <div class="gold-card-emblem">👑</div>
                         <div class="gold-card-text">KALA KERALA</div>
                     </div>
-
-                    <!-- Slot 2 (Mid Left) -->
                     <div class="carousel-card slot-2 dynamic-gold-card" id="card-slot-2">
                         <div class="gold-card-emblem">👑</div>
                         <div class="gold-card-text">KALA KERALA</div>
                     </div>
-                    
-                    <!-- Slot 3 (Hero Center Active Slot with 3D Flip) -->
                     <div class="carousel-card slot-3 active-center" onclick="handleCenterCardClick(event)">
                         <div class="flip-card-inner" id="carousel-flip-inner">
                             <div class="flip-card-face flip-card-front dynamic-gold-card" id="card-slot-3">
@@ -133,19 +151,14 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Slot 4 (Mid Right) -->
                     <div class="carousel-card slot-4 dynamic-gold-card" id="card-slot-4">
                         <div class="gold-card-emblem">👑</div>
                         <div class="gold-card-text">KALA KERALA</div>
                     </div>
-
-                    <!-- Slot 5 (Far Right Peek) -->
                     <div class="carousel-card slot-5 dynamic-gold-card" id="card-slot-5">
                         <div class="gold-card-emblem">👑</div>
                         <div class="gold-card-text">KALA KERALA</div>
                     </div>
-
                 </div>
             </div>
 
@@ -154,13 +167,55 @@
             <div class="button-group cinematic-buttons">
                 <button class="cyber-btn secondary" onclick="goToScreen(4, 'BACK_TO_POOLS')">Back to Pools</button>
                 <button class="cyber-btn secondary" id="stop-roller-btn" onclick="manualStopDraw()">⚡ Stop & Select</button>
-                <button class="cyber-btn danger" id="discard-btn" style="display:none;" onclick="">Discard Card</button>
+                <button class="cyber-btn warning" id="sold-to-btn" style="display:none;" onclick="openSoldToModal()">🏆 Sold To</button>
                 <button class="cyber-btn" id="redraw-btn" style="display:none;" onclick="">🎲 Draw Another</button>
             </div>
         </div>
     </div>
 
-    <!-- LIGHTBOX POPUP VIEWER TRIGGERED AFTER DRAW -->
+    <!-- CUSTOM MODAL FOR TEAM BUDGET ENTRY -->
+    <div id="team-budget-modal" class="lightbox-overlay" onclick="closeTeamBudgetModal(event)">
+        <div class="hud-card wide" onclick="event.stopPropagation()">
+            <h1>Set Team Budget</h1>
+            <p id="modal-team-name-display" class="subtitle">Enter starting balance for team</p>
+            <div class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
+                <label for="team-budget-input">Starting Balance (RS)</label>
+                <input type="number" id="team-budget-input" class="cyber-input" value="10000000" placeholder="Enter budget...">
+            </div>
+            <div class="button-group">
+                <button class="cyber-btn secondary" onclick="closeTeamBudgetModal()">Cancel</button>
+                <button class="cyber-btn warning" onclick="confirmAddTeam()">Create Team</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM MODAL FOR PLAYER PRICE ENTRY -->
+    <div id="player-price-modal" class="lightbox-overlay" onclick="closePlayerPriceModal(event)">
+        <div class="hud-card wide" onclick="event.stopPropagation()">
+            <h1>Player Sale Price</h1>
+            <p id="modal-sale-info" class="subtitle">Enter winning bid price</p>
+            <div class="input-group" style="margin-bottom: 1.5rem; text-align: left;">
+                <label for="player-price-input">Winning Bid (RS)</label>
+                <input type="number" id="player-price-input" class="cyber-input" value="500000" placeholder="Enter price...">
+            </div>
+            <div class="button-group">
+                <button class="cyber-btn secondary" onclick="closePlayerPriceModal()">Cancel</button>
+                <button class="cyber-btn warning" onclick="confirmPlayerSale()">Confirm Sale</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SOLD TO TEAM SELECTION MODAL -->
+    <div id="sold-to-modal" class="lightbox-overlay" onclick="closeSoldToModal(event)">
+        <div class="hud-card wide" onclick="event.stopPropagation()">
+            <h1>Select Winning Destination</h1>
+            <p class="subtitle">Assign Asset to Team Roster or Unsold Pool</p>
+            <div id="sold-teams-list" class="sold-teams-list"></div>
+            <button class="cyber-btn secondary" style="margin-top: 1.5rem;" onclick="closeSoldToModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX POPUP VIEWER -->
     <div id="image-lightbox" class="lightbox-overlay" onclick="closeLightbox()">
         <div class="lightbox-content">
             <img id="lightbox-img" src="" alt="Enlarged Drawn Card View">
@@ -176,6 +231,11 @@
         let rollerTimer = null;
         let isDrawCompleted = false;
 
+        let teamsData = {}; 
+        let unsoldPoolCards = [];
+        let pendingTeamName = "";
+        let pendingTargetTeamForSale = "";
+
         const goldAndColorPalette = [
             'linear-gradient(135deg, #2b2100, #735500, #ffd700)',
             'linear-gradient(135deg, #1a1000, #997400, #ffea75)',
@@ -185,6 +245,23 @@
             'linear-gradient(135deg, #0a192f, #172a45, #00f3ff)'
         ];
 
+        function showToast(message) {
+            const toast = document.getElementById('system-toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
+
+        async function fetchTeamsFromServer() {
+            try {
+                const res = await fetch('/api/teams');
+                const data = await res.json();
+                if (data.success) { teamsData = data.teams; }
+            } catch (err) {
+                console.error('Error fetching teams:', err);
+            }
+        }
+
         function handleLogin() {
             const userInput = document.getElementById('login-username').value.trim();
             const passInput = document.getElementById('login-password').value.trim();
@@ -192,7 +269,7 @@
 
             if (userInput === "KalaKerala" && passInput === "kalakerala@26") {
                 errorElement.innerText = "";
-                goToScreen(2, 'SUCCESSFUL_LOGIN');
+                fetchTeamsFromServer().then(() => goToScreen(2, 'SUCCESSFUL_LOGIN'));
             } else {
                 errorElement.innerText = "ACCESS DENIED: Invalid credentials.";
             }
@@ -209,7 +286,11 @@
             }
 
             if (screenNumber === 4) {
+                await fetchTeamsFromServer();
                 loadAuctionPools();
+            } else if (screenNumber === 6) {
+                await fetchTeamsFromServer();
+                renderTeamManagement();
             }
 
             try {
@@ -237,16 +318,34 @@
 
                     const pools = {};
                     data.cards.forEach(card => {
-                        const poolName = card.pool || 'Pool 1';
-                        if (!pools[poolName]) {
-                            pools[poolName] = [];
+                        let isAlreadyAssigned = unsoldPoolCards.includes(card.filename);
+                        Object.keys(teamsData).forEach(tName => {
+                            const roster = teamsData[tName].roster || teamsData[tName];
+                            if (Array.isArray(roster) && roster.some(item => item.filename === card.filename)) {
+                                isAlreadyAssigned = true;
+                            }
+                        });
+
+                        if (!isAlreadyAssigned) {
+                            const poolName = card.pool || 'Pool 1';
+                            if (!pools[poolName]) pools[poolName] = [];
+                            pools[poolName].push(card.filename);
                         }
-                        pools[poolName].push(card.filename);
                     });
+
+                    if (unsoldPoolCards.length > 0) {
+                        pools["Unsold Pool"] = [...unsoldPoolCards];
+                    }
 
                     currentPoolCardsCache = pools;
 
-                    Object.keys(pools).sort().forEach(poolName => {
+                    const poolKeys = Object.keys(pools);
+                    if (poolKeys.length === 0) {
+                        container.innerHTML = '<p class="loading-text">No active cards available in vaults or pools!</p>';
+                        return;
+                    }
+
+                    poolKeys.sort().forEach(poolName => {
                         const poolSection = document.createElement('div');
                         poolSection.className = 'pool-section';
 
@@ -256,16 +355,17 @@
                                 <div class="auction-card-slot" onclick="openLightbox('/uploads/${filename}')">
                                     <img src="/uploads/${filename}" alt="Auction Card">
                                     <div class="card-overlay" onclick="event.stopPropagation()">
-                                        <button class="cyber-btn small" onclick="startBidding('${filename}', '${poolName}')">Bid</button>
+                                        <button class="cyber-btn small danger" onclick="discardCardFromArena('${filename}', '${poolName}')">🗑️ Discard</button>
                                     </div>
                                 </div>
                             `;
                         });
 
+                        const isUnsold = poolName === "Unsold Pool";
                         poolSection.innerHTML = `
                             <div class="pool-header-row">
-                                <h2 class="pool-title">📂 ${poolName} (${pools[poolName].length} assets)</h2>
-                                <button class="cyber-btn small draw-pool-btn" onclick="drawRandomFromPool('${poolName}')">🎲 Draw Random Card</button>
+                                <h2 class="pool-title" style="${isUnsold ? 'color: #ef4444;' : ''}">📂 ${poolName} (${pools[poolName].length} assets)</h2>
+                                ${!isUnsold ? `<button class="cyber-btn small draw-pool-btn" onclick="drawRandomFromPool('${poolName}')">🎲 Draw Random Card</button>` : `<button class="cyber-btn small draw-pool-btn" style="border-color: #ef4444; color: #ef4444;" onclick="drawRandomFromPool('${poolName}')">🎲 Draw Unsold Card</button>`}
                             </div>
                             <div class="auction-grid">${cardsHTML}</div>
                         `;
@@ -281,6 +381,247 @@
             }
         }
 
+        async function discardCardFromArena(filename, poolName) {
+            if (poolName === "Unsold Pool") {
+                unsoldPoolCards = unsoldPoolCards.filter(f => f !== filename);
+                showToast(`🗑️ Asset removed from Unsold Pool.`);
+                loadAuctionPools();
+                return;
+            }
+
+            if (confirm(`Are you sure you want to permanently discard asset ${filename}?`)) {
+                try {
+                    const res = await fetch('/api/discard-card', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(`🗑️ ${data.message}`);
+                        loadAuctionPools();
+                    } else {
+                        showToast(`❌ ${data.message}`);
+                    }
+                } catch (err) {
+                    console.error('Error discarding card:', err);
+                }
+            }
+        }
+
+        function openTeamBudgetModal() {
+            const input = document.getElementById('new-team-input');
+            const teamName = input.value.trim();
+
+            if (!teamName) {
+                showToast('⚠️ Please enter a valid team name.');
+                return;
+            }
+
+            if (teamName.toLowerCase() === 'unsold') {
+                showToast('⚠️ "Unsold" is reserved as a default system option.');
+                return;
+            }
+
+            if (teamsData[teamName]) {
+                showToast('⚠️ This team already exists!');
+                return;
+            }
+
+            pendingTeamName = teamName;
+            document.getElementById('modal-team-name-display').innerText = `Set starting budget for "${teamName}"`;
+            document.getElementById('team-budget-input').value = "10000000";
+            document.getElementById('team-budget-modal').classList.add('active');
+        }
+
+        function closeTeamBudgetModal(event) {
+            if (!event || event.target.id === 'team-budget-modal') {
+                document.getElementById('team-budget-modal').classList.remove('active');
+            }
+        }
+
+        async function confirmAddTeam() {
+            const budgetVal = document.getElementById('team-budget-input').value.trim();
+            const startingBalance = Number(budgetVal) || 0;
+
+            try {
+                const res = await fetch('/api/teams/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamName: pendingTeamName, balance: startingBalance })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    teamsData = data.teams;
+                    document.getElementById('new-team-input').value = '';
+                    closeTeamBudgetModal();
+                    renderTeamManagement();
+                    showToast(`✅ Team "${pendingTeamName}" created successfully!`);
+                } else {
+                    showToast(`❌ ${data.message}`);
+                }
+            } catch (err) {
+                console.error('Error creating team:', err);
+            }
+        }
+
+        async function deleteTeam(teamName) {
+            if (confirm(`Are you sure you want to delete team "${teamName}"?`)) {
+                try {
+                    const res = await fetch('/api/teams/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ teamName })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        teamsData = data.teams;
+                        renderTeamManagement();
+                        showToast(`🗑️ Team "${teamName}" removed.`);
+                    }
+                } catch (err) {
+                    console.error('Error deleting team:', err);
+                }
+            }
+        }
+
+        function renderTeamManagement() {
+            const container = document.getElementById('teams-container');
+            const teamNames = Object.keys(teamsData);
+
+            if (teamNames.length === 0) {
+                container.innerHTML = '<p class="loading-text">No teams created yet. Add your first team above!</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            teamNames.forEach(teamName => {
+                const teamObj = teamsData[teamName];
+                const roster = teamObj.roster || (Array.isArray(teamObj) ? teamObj : []);
+                const balance = teamObj.balance !== undefined ? teamObj.balance : 0;
+                let cardsHTML = '';
+
+                if (roster.length > 0) {
+                    roster.forEach(item => {
+                        cardsHTML += `
+                            <div class="team-card-thumb-wrapper">
+                                <div class="team-card-thumb" onclick="openLightbox('/uploads/${item.filename}')">
+                                    <img src="/uploads/${item.filename}" alt="Sold Card">
+                                </div>
+                                <span class="card-price-tag">RS ${item.price}</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    cardsHTML = '<p class="no-cards-msg">No cards sold to this team yet.</p>';
+                }
+
+                const teamBox = document.createElement('div');
+                teamBox.className = 'team-box';
+                teamBox.innerHTML = `
+                    <div class="team-box-header">
+                        <h3>🛡️ ${teamName} <span class="team-balance-badge">(Balance: RS ${balance.toLocaleString()} | ${roster.length} assets)</span></h3>
+                        <button class="cyber-btn small danger delete-team-btn" onclick="deleteTeam('${teamName}')">🗑️ Delete Team</button>
+                    </div>
+                    <div class="team-cards-grid">${cardsHTML}</div>
+                `;
+                container.appendChild(teamBox);
+            });
+        }
+
+        function openSoldToModal() {
+            const listContainer = document.getElementById('sold-teams-list');
+            const teamNames = Object.keys(teamsData);
+
+            listContainer.innerHTML = '';
+
+            const unsoldBtn = document.createElement('button');
+            unsoldBtn.className = 'cyber-btn danger';
+            unsoldBtn.innerText = `⚠️ Unsold (Move to Unsold Pool)`;
+            unsoldBtn.onclick = () => assignCardToTeam('Unsold');
+            listContainer.appendChild(unsoldBtn);
+
+            teamNames.forEach(teamName => {
+                const teamObj = teamsData[teamName];
+                const roster = teamObj.roster || (Array.isArray(teamObj) ? teamObj : []);
+                const balance = teamObj.balance !== undefined ? teamObj.balance : 0;
+
+                const btn = document.createElement('button');
+                btn.className = 'cyber-btn secondary';
+                btn.innerHTML = `🛡️ ${teamName} <span style="color:#ffd700; font-size:0.85rem;">(Bal: RS ${balance.toLocaleString()})</span>`;
+                btn.onclick = () => promptPlayerPrice(teamName);
+                listContainer.appendChild(btn);
+            });
+
+            document.getElementById('sold-to-modal').classList.add('active');
+        }
+
+        function closeSoldToModal(event) {
+            if (!event || event.target.id === 'sold-to-modal') {
+                document.getElementById('sold-to-modal').classList.remove('active');
+            }
+        }
+
+        function promptPlayerPrice(teamName) {
+            pendingTargetTeamForSale = teamName;
+            document.getElementById('modal-sale-info').innerText = `Assigning player to "${teamName}"`;
+            document.getElementById('player-price-input').value = "500000";
+            document.getElementById('sold-to-modal').classList.remove('active');
+            document.getElementById('player-price-modal').classList.add('active');
+        }
+
+        function closePlayerPriceModal(event) {
+            if (!event || event.target.id === 'player-price-modal') {
+                document.getElementById('player-price-modal').classList.remove('active');
+            }
+        }
+
+        async function confirmPlayerSale() {
+            const priceVal = document.getElementById('player-price-input').value.trim();
+            const price = priceVal || "0";
+
+            closePlayerPriceModal();
+            assignCardToTeam(pendingTargetTeamForSale, price);
+        }
+
+        async function assignCardToTeam(teamName, price = "0") {
+            if (!activeDrawnCardFilename) return;
+
+            if (teamName === 'Unsold') {
+                if (!unsoldPoolCards.includes(activeDrawnCardFilename)) {
+                    unsoldPoolCards.push(activeDrawnCardFilename);
+                }
+                showToast(`⚠️ Asset ${activeDrawnCardFilename} marked as Unsold.`);
+            } else {
+                try {
+                    const res = await fetch('/api/save-team-card', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ teamName, filename: activeDrawnCardFilename, price })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        teamsData = data.teams;
+                        unsoldPoolCards = unsoldPoolCards.filter(f => f !== activeDrawnCardFilename);
+                        showToast(`✅ Asset sold to ${teamName} for RS ${price}! Balance updated.`);
+                    } else {
+                        showToast(`❌ ${data.message}`);
+                    }
+                } catch (err) {
+                    console.error('Error saving team card:', err);
+                }
+            }
+
+            const poolCards = currentPoolCardsCache[activePoolName];
+            if (poolCards) {
+                const index = poolCards.indexOf(activeDrawnCardFilename);
+                if (index > -1) { poolCards.splice(index, 1); }
+            }
+
+            closeSoldToModal();
+            goToScreen(4, 'CARD_ASSIGNED_SUCCESSFULLY');
+        }
+
         function openLightbox(imgSrc) {
             document.getElementById('lightbox-img').src = imgSrc;
             document.getElementById('image-lightbox').classList.add('active');
@@ -291,9 +632,7 @@
         }
 
         function handleRollerClick() {
-            if (!isDrawCompleted) {
-                manualStopDraw();
-            }
+            if (!isDrawCompleted) manualStopDraw();
         }
 
         function handleCenterCardClick(event) {
@@ -303,11 +642,10 @@
             }
         }
 
-        // High-Speed Cinematic Carousel Roller Animation (Exact Video Match)
         function drawRandomFromPool(poolName) {
             const poolCards = currentPoolCardsCache[poolName];
             if (!poolCards || poolCards.length === 0) {
-                alert(`No cards available in ${poolName}!`);
+                showToast(`⚠️ No cards available in ${poolName}!`);
                 return;
             }
 
@@ -317,27 +655,22 @@
 
             document.getElementById('draw-pool-title').innerText = `${poolName} - CAROUSEL DRAW`;
             document.getElementById('redraw-btn').style.display = 'none';
-            document.getElementById('discard-btn').style.display = 'none';
+            document.getElementById('sold-to-btn').style.display = 'none';
             document.getElementById('stop-roller-btn').style.display = 'block';
             document.getElementById('redraw-btn').setAttribute('onclick', `drawRandomFromPool('${poolName}')`);
 
             document.getElementById('carousel-flip-inner').classList.remove('flipped');
-            const trackEl = document.getElementById('carousel-track');
-            trackEl.classList.add('track-motion-blur');
+            document.getElementById('carousel-track').classList.add('track-motion-blur');
 
-            const subtitleElement = document.getElementById('draw-status-subtitle');
-            const infoElement = document.getElementById('spotlight-filename');
-            subtitleElement.innerText = "⚡ ROLLER SPINNING FAST... TAP TO STOP!";
-            infoElement.innerText = "Shuffling vault assets...";
+            document.getElementById('draw-status-subtitle').innerText = "⚡ ROLLER SPINNING FAST... TAP TO STOP!";
+            document.getElementById('spotlight-filename').innerText = "Shuffling vault assets...";
 
             if (rollerTimer) clearInterval(rollerTimer);
-
             rollerTimer = setInterval(() => {
                 for (let i = 1; i <= 5; i++) {
                     const cardEl = document.getElementById(`card-slot-${i}`);
                     if (cardEl) {
-                        const randomGrad = goldAndColorPalette[Math.floor(Math.random() * goldAndColorPalette.length)];
-                        cardEl.style.background = randomGrad;
+                        cardEl.style.background = goldAndColorPalette[Math.floor(Math.random() * goldAndColorPalette.length)];
                     }
                 }
             }, 50);
@@ -348,17 +681,13 @@
             isDrawCompleted = true;
 
             if (rollerTimer) clearInterval(rollerTimer);
-            const trackEl = document.getElementById('carousel-track');
-            trackEl.classList.remove('track-motion-blur');
+            document.getElementById('carousel-track').classList.remove('track-motion-blur');
 
             const poolCards = currentPoolCardsCache[activePoolName];
             const finalIndex = Math.floor(Math.random() * poolCards.length);
             activeDrawnCardFilename = poolCards[finalIndex];
 
-            // Set final winner image in center slot back face
             document.getElementById('c-img-3').src = `/uploads/${activeDrawnCardFilename}`;
-            
-            // Trigger smooth 3D flip card reveal
             document.getElementById('carousel-flip-inner').classList.add('flipped');
 
             document.getElementById('draw-status-subtitle').innerText = "🔥 WINNER LOCKED! (Tap center card to enlarge)";
@@ -366,52 +695,13 @@
 
             document.getElementById('stop-roller-btn').style.display = 'none';
             document.getElementById('redraw-btn').style.display = 'block';
-            document.getElementById('discard-btn').style.display = 'block';
-            document.getElementById('discard-btn').setAttribute('onclick', `discardActiveCard('${activePoolName}', '${activeDrawnCardFilename}')`);
+            document.getElementById('sold-to-btn').style.display = 'block';
 
-            triggerCelebrationPoppers();
-        }
-
-        function triggerCelebrationPoppers() {
-            confetti({
-                particleCount: 150,
-                spread: 100,
-                origin: { y: 0.5 },
-                colors: ['#ffd700', '#00f3ff', '#9d00ff', '#ffffff']
-            });
-        }
-
-        async function discardActiveCard(poolName, filename) {
-            if (!confirm(`Are you sure you want to permanently discard ${filename} from ${poolName}?`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/discard-card', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: filename })
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert(`🗑️ Card successfully discarded from the system.`);
-                    const index = currentPoolCardsCache[poolName].indexOf(filename);
-                    if (index > -1) {
-                        currentPoolCardsCache[poolName].splice(index, 1);
-                    }
-                    goToScreen(4, 'CARD_DISCARDED');
-                } else {
-                    alert('❌ Failed to discard: ' + result.message);
-                }
-            } catch (err) {
-                console.error('Error discarding card:', err);
-                alert('❌ Error communicating with server.');
-            }
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: ['#ffd700', '#00f3ff', '#9d00ff', '#ffffff'] });
         }
 
         function startBidding(filename, poolName) {
-            alert(`[System]: Initializing live bidding for asset from ${poolName}: ${filename}`);
+            showToast(`[System]: Initializing live bidding for asset from ${poolName}`);
         }
 
         function triggerFileInput() {
@@ -430,38 +720,24 @@
                 };
                 reader.readAsDataURL(file);
             });
-
             event.target.value = '';
         }
 
         function renderUploadGrid() {
             const grid = document.getElementById('upload-grid');
-            
-            grid.innerHTML = `
-                <div class="upload-slot add-slot" onclick="triggerFileInput()">
-                    <div class="plus-icon">+</div>
-                    <span>Add Card</span>
-                </div>
-            `;
-
+            grid.innerHTML = `<div class="upload-slot add-slot" onclick="triggerFileInput()"><div class="plus-icon">+</div><span>Add Card</span></div>`;
             const addSlot = grid.firstElementChild;
 
             selectedImagesArray.forEach((imgSrc, index) => {
                 const slot = document.createElement('div');
                 slot.className = 'upload-slot preview-slot';
-                slot.innerHTML = `
-                    <img src="${imgSrc}" alt="Card Preview" onclick="openLightbox('${imgSrc}')">
-                    <button class="remove-btn" onclick="removeImage(${index})">&times;</button>
-                `;
+                slot.innerHTML = `<img src="${imgSrc}" alt="Card Preview" onclick="openLightbox('${imgSrc}')"><button class="remove-btn" onclick="removeImage(${index})">&times;</button>`;
                 grid.insertBefore(slot, addSlot);
             });
 
             const submitBtn = document.getElementById('upload-submit-btn');
-            if (selectedImagesArray.length > 0) {
-                submitBtn.removeAttribute('disabled');
-            } else {
-                submitBtn.setAttribute('disabled', 'true');
-            }
+            if (selectedImagesArray.length > 0) submitBtn.removeAttribute('disabled');
+            else submitBtn.setAttribute('disabled', 'true');
         }
 
         function removeImage(index) {
@@ -485,16 +761,16 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(`✅ Success! ${result.message}`);
+                    showToast(`✅ Success! ${result.message}`);
                     selectedImagesArray = [];
                     renderUploadGrid();
                     goToScreen(2, 'CARDS_UPLOADED_SUCCESSFULLY');
                 } else {
-                    alert('❌ Upload failed: ' + result.message);
+                    showToast(`❌ Upload failed: ${result.message}`);
                 }
             } catch (err) {
                 console.error('Error uploading:', err);
-                alert('❌ Error connecting to server.');
+                showToast(`❌ Error connecting to server.`);
             } finally {
                 submitBtn.innerText = 'Save to System';
             }
