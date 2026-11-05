@@ -1,127 +1,209 @@
 const express = require('express');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const uploadsDir = path.join(__dirname, 'uploads');
-const dbFile = path.join(__dirname, 'pools_db.json');
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(cors());
 
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-}
-
-if (!fs.existsSync(dbFile)) {
-    fs.writeFileSync(dbFile, JSON.stringify({}));
-}
-
-// Middleware with high payload limit for card images
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.post('/api/action', (req, res) => {
-    const { actionType, timestamp } = req.body;
-    console.log(`[LOCAL SYSTEM LOG] Action: ${actionType} at ${timestamp}`);
-    res.json({ success: true });
-});
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const CARDS_FILE = path.join(__dirname, 'cards.json');
+const TEAMS_FILE = path.join(__dirname, 'teams.json');
 
-// API route to get all cards and their pool assignments
+if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+if (!fs.existsSync(CARDS_FILE)) {
+    fs.writeFileSync(CARDS_FILE, JSON.stringify([]));
+}
+
+if (!fs.existsSync(TEAMS_FILE)) {
+    fs.writeFileSync(TEAMS_FILE, JSON.stringify({})); 
+}
+
+// 1. Get all uploaded cards
 app.get('/api/cards', (req, res) => {
     try {
-        let dbData = {};
-        if (fs.existsSync(dbFile)) {
-            dbData = JSON.parse(fs.readFileSync(dbFile, 'utf8'));
-        }
-
-        if (!fs.existsSync(uploadsDir)) {
-            return res.json({ success: true, cards: [] });
-        }
-
-        const files = fs.readdirSync(uploadsDir);
-        const imageFiles = files.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
-
-        const cardsWithPools = imageFiles.map(filename => ({
-            filename: filename,
-            pool: dbData[filename] || 'Pool 1'
-        }));
-
-        res.json({ success: true, cards: cardsWithPools });
+        const cardsData = JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
+        res.json({ success: true, cards: cardsData });
     } catch (err) {
         console.error('Error reading cards:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, message: 'Failed to load cards.' });
     }
 });
 
-// API route to save uploaded cards and assign them to a pool locally
+// 2. Upload new cards and assign to a Pool
 app.post('/api/upload-cards', (req, res) => {
     try {
         const { images, poolName } = req.body;
-        if (!images || images.length === 0) {
+        if (!images || !Array.isArray(images) || images.length === 0) {
             return res.status(400).json({ success: false, message: 'No images provided.' });
         }
 
-        let dbData = {};
-        if (fs.existsSync(dbFile)) {
-            dbData = JSON.parse(fs.readFileSync(dbFile, 'utf8'));
-        }
+        let cardsData = JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
 
-        const savedFiles = [];
-        images.forEach((imgData, index) => {
-            const matches = imgData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-            if (matches && matches.length === 3) {
-                const ext = matches[1].split('/')[1] || 'png';
-                const buffer = Buffer.from(matches[2], 'base64');
-                const filename = `card_${Date.now()}_${index + 1}.${ext}`;
-                const filepath = path.join(uploadsDir, filename);
+        images.forEach((imgBase64, index) => {
+            const matches = imgBase64.match(/^data:image\/([A-Za-z-+\/]+);base64,(.+)$/);
+            if (!matches || matches.length !== 3) return;
 
-                fs.writeFileSync(filepath, buffer);
-                savedFiles.push(filename);
+            const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+            const buffer = Buffer.from(matches[2], 'base64');
+            const filename = `card_${Date.now()}_${index}.${ext}`;
+            const filepath = path.join(UPLOADS_DIR, filename);
 
-                dbData[filename] = poolName || 'Pool 1';
-            }
+            fs.writeFileSync(filepath, buffer);
+
+            cardsData.push({
+                filename: filename,
+                pool: poolName || 'Pool 1',
+                uploadedAt: new Date().toISOString()
+            });
         });
 
-        fs.writeFileSync(dbFile, JSON.stringify(dbData, null, 2));
-
-        console.log(`[LOCAL STORAGE] Saved ${savedFiles.length} card(s) to ${poolName || 'Pool 1'}.`);
-        res.json({ success: true, message: `Successfully saved ${savedFiles.length} images to ${poolName || 'Pool 1'}!`, savedFiles });
+        fs.writeFileSync(CARDS_FILE, JSON.stringify(cardsData, null, 2));
+        res.json({ success: true, message: `${images.length} cards successfully saved to system!` });
     } catch (err) {
-        console.error('Error saving cards:', err);
-        res.status(500).json({ success: false, message: err.message });
+        console.error('Error uploading cards:', err);
+        res.status(500).json({ success: false, message: 'Server error during upload.' });
     }
 });
 
-// API route to discard/delete a card file and its pool metadata
+// 3. Discard / Remove card permanently from system
 app.post('/api/discard-card', (req, res) => {
     try {
         const { filename } = req.body;
         if (!filename) {
-            return res.status(400).json({ success: false, message: 'No filename provided.' });
+            return res.status(400).json({ success: false, message: 'Filename required.' });
         }
 
-        const filePath = path.join(uploadsDir, filename);
+        const filePath = path.join(UPLOADS_DIR, filename);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
         }
 
-        let dbData = {};
-        if (fs.existsSync(dbFile)) {
-            dbData = JSON.parse(fs.readFileSync(dbFile, 'utf8'));
-            delete dbData[filename];
-            fs.writeFileSync(dbFile, JSON.stringify(dbData, null, 2));
-        }
+        let cardsData = JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
+        cardsData = cardsData.filter(c => c.filename !== filename);
+        fs.writeFileSync(CARDS_FILE, JSON.stringify(cardsData, null, 2));
 
-        console.log(`[LOCAL STORAGE] Discarded card: ${filename}`);
-        res.json({ success: true, message: `Card ${filename} permanently discarded.` });
+        res.json({ success: true, message: `Card ${filename} successfully discarded.` });
     } catch (err) {
         console.error('Error discarding card:', err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, message: 'Failed to discard card.' });
     }
 });
 
+// 4. Get all team details and rosters with balances
+app.get('/api/teams', (req, res) => {
+    try {
+        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+        
+        Object.keys(teamsData).forEach(tName => {
+            if (Array.isArray(teamsData[tName])) {
+                teamsData[tName] = {
+                    balance: 10000000, 
+                    roster: teamsData[tName]
+                };
+            }
+        });
+
+        res.json({ success: true, teams: teamsData });
+    } catch (err) {
+        console.error('Error reading teams:', err);
+        res.status(500).json({ success: false, message: 'Failed to load teams.' });
+    }
+});
+
+// 5. Create a new team with starting balance
+app.post('/api/teams/create', (req, res) => {
+    try {
+        const { teamName, balance } = req.body;
+        if (!teamName) {
+            return res.status(400).json({ success: false, message: 'Team name is required.' });
+        }
+
+        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+
+        if (teamsData[teamName]) {
+            return res.status(400).json({ success: false, message: 'Team already exists.' });
+        }
+
+        teamsData[teamName] = {
+            balance: Number(balance) || 0,
+            roster: []
+        };
+
+        fs.writeFileSync(TEAMS_FILE, JSON.stringify(teamsData, null, 2));
+        res.json({ success: true, teams: teamsData });
+    } catch (err) {
+        console.error('Error creating team:', err);
+        res.status(500).json({ success: false, message: 'Failed to create team.' });
+    }
+});
+
+// 6. Delete a team
+app.post('/api/teams/delete', (req, res) => {
+    try {
+        const { teamName } = req.body;
+        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+
+        if (teamsData[teamName]) {
+            delete teamsData[teamName];
+            fs.writeFileSync(TEAMS_FILE, JSON.stringify(teamsData, null, 2));
+        }
+        res.json({ success: true, teams: teamsData });
+    } catch (err) {
+        console.error('Error deleting team:', err);
+        res.status(500).json({ success: false, message: 'Failed to delete team.' });
+    }
+});
+
+// 7. Assign sold player to a team, record price, and deduct from balance
+app.post('/api/save-team-card', (req, res) => {
+    try {
+        const { teamName, filename, price } = req.body;
+        if (!teamName || !filename) {
+            return res.status(400).json({ success: false, message: 'Team name and filename are required.' });
+        }
+
+        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+
+        if (!teamsData[teamName]) {
+            teamsData[teamName] = { balance: 10000000, roster: [] };
+        } else if (Array.isArray(teamsData[teamName])) {
+            teamsData[teamName] = { balance: 10000000, roster: teamsData[teamName] };
+        }
+
+        const salePrice = Number(price) || 0;
+        teamsData[teamName].balance = Math.max(0, teamsData[teamName].balance - salePrice);
+
+        teamsData[teamName].roster.push({
+            filename: filename,
+            price: salePrice.toString()
+        });
+
+        fs.writeFileSync(TEAMS_FILE, JSON.stringify(teamsData, null, 2));
+        res.json({ success: true, teams: teamsData });
+    } catch (err) {
+        console.error('Error saving team card:', err);
+        res.status(500).json({ success: false, message: 'Failed to assign card to team.' });
+    }
+});
+
+// 8. Action logger endpoint
+app.post('/api/action', (req, res) => {
+    const { actionType, timestamp } = req.body;
+    console.log(`[Terminal Action]: ${actionType} at ${timestamp}`);
+    res.json({ success: true });
+});
+
 app.listen(PORT, () => {
-    console.log(`🚀 Futuristic server running at: http://localhost:${PORT}`);
+    console.log(`🚀 Futuristic Auction Terminal running on http://localhost:${PORT}`);
 });
