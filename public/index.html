@@ -122,7 +122,7 @@
 
     </div>
 
-    <!-- SCREEN 5: Cinematic Sliding Carousel Roller Draw Modal -->
+    <!-- SCREEN 5: Gold Back Card Roller Draw Modal -->
     <div id="screen-5" class="fullscreen-modal">
         <div class="arena-lights"></div>
         <div class="scanline-overlay"></div>
@@ -131,38 +131,14 @@
             <p class="subtitle" id="draw-status-subtitle">TAP ROLLER OR BUTTON TO STOP</p>
             
             <div class="carousel-roller-container" onclick="handleRollerClick()">
-                <div class="carousel-track" id="carousel-track">
-                    <div class="carousel-card slot-1 dynamic-gold-card" id="card-slot-1">
-                        <div class="gold-card-emblem">👑</div>
-                        <div class="gold-card-text">KALA KERALA</div>
-                    </div>
-                    <div class="carousel-card slot-2 dynamic-gold-card" id="card-slot-2">
-                        <div class="gold-card-emblem">👑</div>
-                        <div class="gold-card-text">KALA KERALA</div>
-                    </div>
-                    <div class="carousel-card slot-3 active-center" onclick="handleCenterCardClick(event)">
-                        <div class="flip-card-inner" id="carousel-flip-inner">
-                            <div class="flip-card-face flip-card-front dynamic-gold-card" id="card-slot-3">
-                                <div class="gold-card-emblem">👑</div>
-                                <div class="gold-card-text">KALA KERALA</div>
-                            </div>
-                            <div class="flip-card-face flip-card-back">
-                                <img id="c-img-3" src="" alt="Winner Center">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="carousel-card slot-4 dynamic-gold-card" id="card-slot-4">
-                        <div class="gold-card-emblem">👑</div>
-                        <div class="gold-card-text">KALA KERALA</div>
-                    </div>
-                    <div class="carousel-card slot-5 dynamic-gold-card" id="card-slot-5">
-                        <div class="gold-card-emblem">👑</div>
-                        <div class="gold-card-text">KALA KERALA</div>
+                <div class="pes-roller-window">
+                    <div class="carousel-track pes-reel-track fast-roller-animation" id="carousel-track">
+                        <!-- Dynamically generated gold back cards -->
                     </div>
                 </div>
             </div>
 
-            <div class="spotlight-info" id="spotlight-filename">Initializing cinematic roller...</div>
+            <div class="spotlight-info" id="spotlight-filename">Initializing fast roller...</div>
 
             <div class="button-group cinematic-buttons">
                 <button class="cyber-btn secondary" onclick="goToScreen(4, 'BACK_TO_POOLS')">Back to Pools</button>
@@ -228,7 +204,8 @@
         let currentPoolCardsCache = {};
         let activeDrawnCardFilename = null;
         let activePoolName = null;
-        let rollerTimer = null;
+        let fastSpinInterval = null;
+        let currentPoolItems = [];
         let isDrawCompleted = false;
 
         let teamsData = {}; 
@@ -236,13 +213,13 @@
         let pendingTeamName = "";
         let pendingTargetTeamForSale = "";
 
-        const goldAndColorPalette = [
-            'linear-gradient(135deg, #2b2100, #735500, #ffd700)',
-            'linear-gradient(135deg, #1a1000, #997400, #ffea75)',
-            'linear-gradient(135deg, #382900, #5c4300, #e6c200)',
-            'linear-gradient(135deg, #1f1400, #806000, #ffcc00)',
-            'linear-gradient(135deg, #261c00, #b38600, #fff099)',
-            'linear-gradient(135deg, #0a192f, #172a45, #00f3ff)'
+        const randomBackGradients = [
+            'linear-gradient(135deg, #111827, #1f2937, #374151)',
+            'linear-gradient(135deg, #0f172a, #1e293b, #334155)',
+            'linear-gradient(135deg, #18181b, #27272a, #3f3f46)',
+            'linear-gradient(135deg, #09090b, #18181b, #27272a)',
+            'linear-gradient(135deg, #172554, #1e3a8a, #1d4ed8)',
+            'linear-gradient(135deg, #451a03, #78350f, #b45309)'
         ];
 
         function showToast(message) {
@@ -462,6 +439,7 @@
                 }
             } catch (err) {
                 console.error('Error creating team:', err);
+                showToast(`❌ Error connecting to server.`);
             }
         }
 
@@ -635,13 +613,6 @@
             if (!isDrawCompleted) manualStopDraw();
         }
 
-        function handleCenterCardClick(event) {
-            if (isDrawCompleted && activeDrawnCardFilename) {
-                event.stopPropagation();
-                openLightbox(`/uploads/${activeDrawnCardFilename}`);
-            }
-        }
-
         function drawRandomFromPool(poolName) {
             const poolCards = currentPoolCardsCache[poolName];
             if (!poolCards || poolCards.length === 0) {
@@ -651,46 +622,80 @@
 
             activePoolName = poolName;
             isDrawCompleted = false;
+            currentPoolItems = poolCards;
             goToScreen(5, 'OPEN_CAROUSEL_DRAW');
 
-            document.getElementById('draw-pool-title').innerText = `${poolName} - CAROUSEL DRAW`;
+            document.getElementById('draw-pool-title').innerText = `${poolName} - GOLD PACK DRAW`;
             document.getElementById('redraw-btn').style.display = 'none';
             document.getElementById('sold-to-btn').style.display = 'none';
             document.getElementById('stop-roller-btn').style.display = 'block';
             document.getElementById('redraw-btn').setAttribute('onclick', `drawRandomFromPool('${poolName}')`);
+            document.getElementById('draw-status-subtitle').innerText = "⚡ LIGHTNING FAST SHUFFLE... TAP TO STOP!";
+            document.getElementById('spotlight-filename').innerText = "Shuffling gold pack backs...";
 
-            document.getElementById('carousel-flip-inner').classList.remove('flipped');
-            document.getElementById('carousel-track').classList.add('track-motion-blur');
+            const track = document.getElementById('carousel-track');
+            track.classList.add('fast-roller-animation');
 
-            document.getElementById('draw-status-subtitle').innerText = "⚡ ROLLER SPINNING FAST... TAP TO STOP!";
-            document.getElementById('spotlight-filename').innerText = "Shuffling vault assets...";
+            renderGoldBackReel(true);
 
-            if (rollerTimer) clearInterval(rollerTimer);
-            rollerTimer = setInterval(() => {
-                for (let i = 1; i <= 5; i++) {
-                    const cardEl = document.getElementById(`card-slot-${i}`);
-                    if (cardEl) {
-                        cardEl.style.background = goldAndColorPalette[Math.floor(Math.random() * goldAndColorPalette.length)];
-                    }
+            if (fastSpinInterval) clearInterval(fastSpinInterval);
+            fastSpinInterval = setInterval(() => {
+                renderGoldBackReel(true);
+            }, 40);
+        }
+
+        function renderGoldBackReel(isSpinning = false) {
+            const track = document.getElementById('carousel-track');
+            let html = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const isCenter = i === 2;
+                const randomBg = randomBackGradients[Math.floor(Math.random() * randomBackGradients.length)];
+
+                if (isCenter && !isSpinning) {
+                    html += `
+                        <div class="pes-card-slot center-winner-slot" onclick="openLightbox('/uploads/${activeDrawnCardFilename}')">
+                            <div class="flip-card-inner flipped">
+                                <div class="flip-card-face flip-card-front gold-card-back-design" style="background: ${randomBg};">
+                                    <div class="gold-emblem">👑</div>
+                                    <div class="gold-brand-text">KALA KERALA</div>
+                                </div>
+                                <div class="flip-card-face flip-card-back">
+                                    <img src="/uploads/${activeDrawnCardFilename}" alt="Winner">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="pes-card-slot ${isCenter ? 'center-winner-slot' : ''}">
+                            <div class="gold-card-back-design" style="background: ${randomBg}; width:100%; height:100%;">
+                                <div class="gold-emblem">👑</div>
+                                <div class="gold-brand-text">KALA KERALA</div>
+                            </div>
+                        </div>
+                    `;
                 }
-            }, 50);
+            }
+            track.innerHTML = html;
         }
 
         function manualStopDraw() {
             if (isDrawCompleted) return;
             isDrawCompleted = true;
 
-            if (rollerTimer) clearInterval(rollerTimer);
-            document.getElementById('carousel-track').classList.remove('track-motion-blur');
+            if (fastSpinInterval) clearInterval(fastSpinInterval);
+
+            const track = document.getElementById('carousel-track');
+            track.classList.remove('fast-roller-animation');
 
             const poolCards = currentPoolCardsCache[activePoolName];
             const finalIndex = Math.floor(Math.random() * poolCards.length);
             activeDrawnCardFilename = poolCards[finalIndex];
 
-            document.getElementById('c-img-3').src = `/uploads/${activeDrawnCardFilename}`;
-            document.getElementById('carousel-flip-inner').classList.add('flipped');
+            renderGoldBackReel(false);
 
-            document.getElementById('draw-status-subtitle').innerText = "🔥 WINNER LOCKED! (Tap center card to enlarge)";
+            document.getElementById('draw-status-subtitle').innerText = "🔥 WINNER LOCKED! (Tap card to enlarge)";
             document.getElementById('spotlight-filename').innerText = `Asset ID: ${activeDrawnCardFilename}`;
 
             document.getElementById('stop-roller-btn').style.display = 'none';
@@ -698,10 +703,8 @@
             document.getElementById('sold-to-btn').style.display = 'block';
 
             confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: ['#ffd700', '#00f3ff', '#9d00ff', '#ffffff'] });
-        }
 
-        function startBidding(filename, poolName) {
-            showToast(`[System]: Initializing live bidding for asset from ${poolName}`);
+            openLightbox(`/uploads/${activeDrawnCardFilename}`);
         }
 
         function triggerFileInput() {
