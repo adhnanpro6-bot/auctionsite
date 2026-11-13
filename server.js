@@ -19,26 +19,43 @@ const TEAMS_FILE = path.join(__dirname, 'teams.json');
 
 // Ensure required directories and files exist safely
 if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    try { fs.mkdirSync(UPLOADS_DIR, { recursive: true }); } catch (e) {}
 }
 
-if (!fs.existsSync(CARDS_FILE)) {
-    fs.writeFileSync(CARDS_FILE, JSON.stringify([]));
+function getStoredCards() {
+    try {
+        if (fs.existsSync(CARDS_FILE)) {
+            return JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
+        }
+    } catch (e) { console.error("Error reading cards.json:", e); }
+    return [];
 }
 
-if (!fs.existsSync(TEAMS_FILE)) {
-    fs.writeFileSync(TEAMS_FILE, JSON.stringify({})); 
+function saveStoredCards(cards) {
+    try {
+        fs.writeFileSync(CARDS_FILE, JSON.stringify(cards, null, 2));
+    } catch (e) { console.error("Error writing cards.json:", e); }
+}
+
+function getStoredTeams() {
+    try {
+        if (fs.existsSync(TEAMS_FILE)) {
+            return JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+        }
+    } catch (e) { console.error("Error reading teams.json:", e); }
+    return {};
+}
+
+function saveStoredTeams(teams) {
+    try {
+        fs.writeFileSync(TEAMS_FILE, JSON.stringify(teams, null, 2));
+    } catch (e) { console.error("Error writing teams.json:", e); }
 }
 
 // 1. Get all uploaded cards
 app.get('/api/cards', (req, res) => {
-    try {
-        const cardsData = JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
-        res.json({ success: true, cards: cardsData });
-    } catch (err) {
-        console.error('Error reading cards:', err);
-        res.status(500).json({ success: false, message: 'Failed to load cards.' });
-    }
+    const cardsData = getStoredCards();
+    res.json({ success: true, cards: cardsData });
 });
 
 // 2. Upload new cards and assign to a Pool
@@ -49,7 +66,7 @@ app.post('/api/upload-cards', (req, res) => {
             return res.status(400).json({ success: false, message: 'No images provided.' });
         }
 
-        let cardsData = JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
+        let cardsData = getStoredCards();
 
         images.forEach((imgBase64, index) => {
             const matches = imgBase64.match(/^data:image\/([A-Za-z-+\/]+);base64,(.+)$/);
@@ -69,7 +86,7 @@ app.post('/api/upload-cards', (req, res) => {
             });
         });
 
-        fs.writeFileSync(CARDS_FILE, JSON.stringify(cardsData, null, 2));
+        saveStoredCards(cardsData);
         res.json({ success: true, message: `${images.length} cards successfully saved to system!` });
     } catch (err) {
         console.error('Error uploading cards:', err);
@@ -87,12 +104,12 @@ app.post('/api/discard-card', (req, res) => {
 
         const filePath = path.join(UPLOADS_DIR, filename);
         if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+            try { fs.unlinkSync(filePath); } catch (e) {}
         }
 
-        let cardsData = JSON.parse(fs.readFileSync(CARDS_FILE, 'utf8'));
+        let cardsData = getStoredCards();
         cardsData = cardsData.filter(c => c.filename !== filename);
-        fs.writeFileSync(CARDS_FILE, JSON.stringify(cardsData, null, 2));
+        saveStoredCards(cardsData);
 
         res.json({ success: true, message: `Card ${filename} successfully discarded.` });
     } catch (err) {
@@ -103,29 +120,21 @@ app.post('/api/discard-card', (req, res) => {
 
 // 4. Get all team details and rosters with balances
 app.get('/api/teams', (req, res) => {
-    try {
-        let teamsData = {};
-        if (fs.existsSync(TEAMS_FILE)) {
-            teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+    let teamsData = getStoredTeams();
+    
+    Object.keys(teamsData).forEach(tName => {
+        if (Array.isArray(teamsData[tName])) {
+            teamsData[tName] = {
+                balance: 10000000, 
+                roster: teamsData[tName]
+            };
         }
-        
-        Object.keys(teamsData).forEach(tName => {
-            if (Array.isArray(teamsData[tName])) {
-                teamsData[tName] = {
-                    balance: 10000000, 
-                    roster: teamsData[tName]
-                };
-            }
-        });
+    });
 
-        res.json({ success: true, teams: teamsData });
-    } catch (err) {
-        console.error('Error reading teams:', err);
-        res.status(500).json({ success: false, message: 'Failed to load teams.' });
-    }
+    res.json({ success: true, teams: teamsData });
 });
 
-// 5. Create a new team with starting balance (Fixed for Local & Render)
+// 5. Create a new team with starting balance
 app.post('/api/teams/create', (req, res) => {
     try {
         const { teamName, balance } = req.body;
@@ -133,14 +142,7 @@ app.post('/api/teams/create', (req, res) => {
             return res.status(400).json({ success: false, message: 'Team name is required.' });
         }
 
-        let teamsData = {};
-        if (fs.existsSync(TEAMS_FILE)) {
-            try {
-                teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
-            } catch (e) {
-                teamsData = {};
-            }
-        }
+        let teamsData = getStoredTeams();
 
         if (teamsData[teamName]) {
             return res.status(400).json({ success: false, message: 'Team already exists.' });
@@ -151,7 +153,7 @@ app.post('/api/teams/create', (req, res) => {
             roster: []
         };
 
-        fs.writeFileSync(TEAMS_FILE, JSON.stringify(teamsData, null, 2));
+        saveStoredTeams(teamsData);
         res.json({ success: true, teams: teamsData });
     } catch (err) {
         console.error('Error creating team:', err);
@@ -163,11 +165,11 @@ app.post('/api/teams/create', (req, res) => {
 app.post('/api/teams/delete', (req, res) => {
     try {
         const { teamName } = req.body;
-        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+        let teamsData = getStoredTeams();
 
         if (teamsData[teamName]) {
             delete teamsData[teamName];
-            fs.writeFileSync(TEAMS_FILE, JSON.stringify(teamsData, null, 2));
+            saveStoredTeams(teamsData);
         }
         res.json({ success: true, teams: teamsData });
     } catch (err) {
@@ -184,7 +186,7 @@ app.post('/api/save-team-card', (req, res) => {
             return res.status(400).json({ success: false, message: 'Team name and filename are required.' });
         }
 
-        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+        let teamsData = getStoredTeams();
 
         if (!teamsData[teamName]) {
             teamsData[teamName] = { balance: 10000000, roster: [] };
@@ -200,7 +202,7 @@ app.post('/api/save-team-card', (req, res) => {
             price: salePrice.toString()
         });
 
-        fs.writeFileSync(TEAMS_FILE, JSON.stringify(teamsData, null, 2));
+        saveStoredTeams(teamsData);
         res.json({ success: true, teams: teamsData });
     } catch (err) {
         console.error('Error saving team card:', err);
