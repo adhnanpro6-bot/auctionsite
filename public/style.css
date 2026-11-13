@@ -612,90 +612,86 @@ p.subtitle {
     margin-bottom: 0.2rem;
 }
 
-.carousel-roller-container {
+/* Gold Back Card Design */
+.pes-roller-window {
+    position: relative;
     width: 100%;
-    margin: 1.5rem 0;
-    cursor: pointer;
+    height: 260px;
     overflow: hidden;
-    padding: 15px 0;
+    padding: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.carousel-track {
+.pes-reel-track {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: center;
+    will-change: transform;
+}
+
+.fast-roller-animation {
+    animation: fastRollerSlide 0.15s linear infinite;
+}
+
+@keyframes fastRollerSlide {
+    0% { transform: translateX(-15px); }
+    100% { transform: translateX(15px); }
+}
+
+.pes-card-slot {
+    width: 100px;
+    height: 145px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    transition: all 0.1s ease;
+    opacity: 0.6;
+    transform: scale(0.85);
+}
+
+.pes-card-slot.center-winner-slot {
+    width: 160px;
+    height: 220px;
+    opacity: 1;
+    transform: scale(1.1);
+    z-index: 10;
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8));
+}
+
+.gold-card-back-design {
     width: 100%;
-    transition: transform 0.15s ease-in-out;
-}
-
-.carousel-track.track-motion-blur {
-    animation: motionBlurWave 0.15s infinite ease-in-out alternate;
-    filter: blur(1.5px);
-}
-
-@keyframes motionBlurWave {
-    0% { transform: translateX(-28px); }
-    100% { transform: translateX(28px); }
-}
-
-.carousel-card {
-    border-radius: 14px;
-    overflow: hidden;
+    height: 100%;
+    border-radius: 12px;
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.2);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6);
-    transition: transform 0.2s ease;
+    padding: 10px;
+    text-align: center;
 }
 
-.dynamic-gold-card {
-    border: 3px solid #ffd700;
-    box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.3);
-    color: #ffd700;
-}
-
-.gold-card-emblem {
+.gold-emblem {
     font-size: 2.2rem;
     filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
-.gold-card-text {
+.gold-brand-text {
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.65rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
-    text-align: center;
-    padding: 0 4px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #ffd700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.8), 0 0 2px #ffffff;
 }
 
-.carousel-card.slot-1, .carousel-card.slot-5 {
-    width: 80px;
-    height: 115px;
-    opacity: 0.35;
-    transform: scale(0.85);
-}
-
-.carousel-card.slot-2, .carousel-card.slot-4 {
-    width: 125px;
-    height: 170px;
-    opacity: 0.75;
-    transform: scale(0.95);
-}
-
-.carousel-card.slot-3 {
-    width: 185px;
-    height: 245px;
-    opacity: 1;
-    border: none;
-    transform: scale(1.05);
-    z-index: 5;
-    perspective: 1000px;
-    background: transparent;
-    box-shadow: 0 0 40px rgba(0, 243, 255, 0.5);
+.pes-center-reticle {
+    display: none;
 }
 
 .flip-card-inner {
