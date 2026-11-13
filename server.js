@@ -17,6 +17,7 @@ const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const CARDS_FILE = path.join(__dirname, 'cards.json');
 const TEAMS_FILE = path.join(__dirname, 'teams.json');
 
+// Ensure required directories and files exist safely
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -103,7 +104,10 @@ app.post('/api/discard-card', (req, res) => {
 // 4. Get all team details and rosters with balances
 app.get('/api/teams', (req, res) => {
     try {
-        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+        let teamsData = {};
+        if (fs.existsSync(TEAMS_FILE)) {
+            teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+        }
         
         Object.keys(teamsData).forEach(tName => {
             if (Array.isArray(teamsData[tName])) {
@@ -121,7 +125,7 @@ app.get('/api/teams', (req, res) => {
     }
 });
 
-// 5. Create a new team with starting balance
+// 5. Create a new team with starting balance (Fixed for Local & Render)
 app.post('/api/teams/create', (req, res) => {
     try {
         const { teamName, balance } = req.body;
@@ -129,7 +133,14 @@ app.post('/api/teams/create', (req, res) => {
             return res.status(400).json({ success: false, message: 'Team name is required.' });
         }
 
-        let teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+        let teamsData = {};
+        if (fs.existsSync(TEAMS_FILE)) {
+            try {
+                teamsData = JSON.parse(fs.readFileSync(TEAMS_FILE, 'utf8'));
+            } catch (e) {
+                teamsData = {};
+            }
+        }
 
         if (teamsData[teamName]) {
             return res.status(400).json({ success: false, message: 'Team already exists.' });
@@ -205,5 +216,5 @@ app.post('/api/action', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Futuristic Auction Terminal running on http://localhost:${PORT}`);
+    console.log(`🚀 Futuristic Auction Terminal running on port ${PORT}`);
 });
